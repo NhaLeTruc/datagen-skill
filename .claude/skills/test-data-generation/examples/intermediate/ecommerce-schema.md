@@ -13,8 +13,10 @@
 - **NEW (US2)**: Zipf distribution for product popularity
 - **NEW (US2)**: Normal distribution for order totals
 - **NEW (US2)**: Temporal patterns (more orders on weekdays)
+- **NEW (US4)**: Multi-format export (SQL, JSON, CSV)
+- **NEW (US4)**: Format consistency validation
 
-**User Stories**: US1 (Constraint-Valid Data) + US2 (Production-Like Patterns)
+**User Stories**: US1 (Constraint-Valid Data), US2 (Production-Like Patterns), US4 (Multi-Format Export)
 
 ---
 
@@ -269,6 +271,260 @@ INSERT INTO order_items (order_id, product_id, quantity, price) VALUES
 
 ---
 
+## Multi-Format Export (User Story 4)
+
+### Format 1: JSON Export
+
+```json
+{
+  "metadata": {
+    "seed": 42,
+    "timestamp": "2024-01-04T15:40:00Z",
+    "record_count": 33,
+    "schema_version": "1.0",
+    "generator_version": "1.0"
+  },
+  "users": [
+    {
+      "id": 1,
+      "name": "Sarah Martinez",
+      "email": "sarah.martinez@gmail.com",
+      "created_at": "2022-03-15T10:00:00Z"
+    },
+    {
+      "id": 2,
+      "name": "James Wilson",
+      "email": "james.wilson@yahoo.com",
+      "created_at": "2022-06-22T14:30:00Z"
+    },
+    {
+      "id": 3,
+      "name": "Maria Garcia",
+      "email": "maria.garcia@outlook.com",
+      "created_at": "2023-01-10T09:15:00Z"
+    },
+    {
+      "id": 4,
+      "name": "David Nguyen",
+      "email": "david.nguyen@icloud.com",
+      "created_at": "2023-04-05T11:45:00Z"
+    },
+    {
+      "id": 5,
+      "name": "Jennifer Taylor",
+      "email": "jennifer.taylor42@gmail.com",
+      "created_at": "2023-07-18T16:20:00Z"
+    }
+  ],
+  "products": [
+    {
+      "id": 1,
+      "sku": "PROD-1234-A5B",
+      "name": "Wireless Headphones",
+      "price": 79.99,
+      "stock": 150
+    },
+    {
+      "id": 2,
+      "sku": "PROD-5678-C2D",
+      "name": "USB-C Cable",
+      "price": 12.49,
+      "stock": 500
+    },
+    {
+      "id": 3,
+      "sku": "PROD-9012-E3F",
+      "name": "Mechanical Keyboard",
+      "price": 149.99,
+      "stock": 75
+    },
+    {
+      "id": 4,
+      "sku": "PROD-3456-G7H",
+      "name": "Laptop Stand",
+      "price": 34.95,
+      "stock": 200
+    },
+    {
+      "id": 5,
+      "sku": "PROD-7890-I1J",
+      "name": "Wireless Mouse",
+      "price": 24.99,
+      "stock": 300
+    }
+  ],
+  "orders": [
+    {
+      "id": 1,
+      "user_id": 2,
+      "total": 127.48,
+      "status": "completed",
+      "created_at": "2024-01-08T14:30:00Z"
+    },
+    {
+      "id": 2,
+      "user_id": 1,
+      "total": 89.99,
+      "status": "completed",
+      "created_at": "2024-01-09T10:15:00Z"
+    },
+    {
+      "id": 3,
+      "user_id": 4,
+      "total": 142.50,
+      "status": "pending",
+      "created_at": "2024-01-10T16:45:00Z"
+    },
+    {
+      "id": 4,
+      "user_id": 2,
+      "total": 73.95,
+      "status": "completed",
+      "created_at": "2024-01-11T09:20:00Z"
+    },
+    {
+      "id": 5,
+      "user_id": 1,
+      "total": 105.47,
+      "status": "pending",
+      "created_at": "2024-01-12T13:10:00Z"
+    },
+    {
+      "id": 6,
+      "user_id": 3,
+      "total": 98.99,
+      "status": "completed",
+      "created_at": "2024-01-15T11:30:00Z"
+    },
+    {
+      "id": 7,
+      "user_id": 5,
+      "total": 64.99,
+      "status": "pending",
+      "created_at": "2024-01-16T15:00:00Z"
+    },
+    {
+      "id": 8,
+      "user_id": 4,
+      "total": 118.75,
+      "status": "completed",
+      "created_at": "2024-01-17T10:45:00Z"
+    }
+  ],
+  "order_items": [
+    {"order_id": 1, "product_id": 1, "quantity": 1, "price": 79.99},
+    {"order_id": 1, "product_id": 2, "quantity": 2, "price": 12.49},
+    {"order_id": 1, "product_id": 5, "quantity": 1, "price": 24.99},
+    {"order_id": 2, "product_id": 1, "quantity": 1, "price": 79.99},
+    {"order_id": 2, "product_id": 2, "quantity": 1, "price": 12.49},
+    {"order_id": 3, "product_id": 2, "quantity": 3, "price": 12.49},
+    {"order_id": 3, "product_id": 3, "quantity": 1, "price": 149.99},
+    {"order_id": 3, "product_id": 5, "quantity": 1, "price": 24.99},
+    {"order_id": 4, "product_id": 2, "quantity": 2, "price": 12.49},
+    {"order_id": 4, "product_id": 4, "quantity": 1, "price": 34.95},
+    {"order_id": 4, "product_id": 5, "quantity": 1, "price": 24.99},
+    {"order_id": 5, "product_id": 1, "quantity": 1, "price": 79.99},
+    {"order_id": 5, "product_id": 5, "quantity": 1, "price": 24.99},
+    {"order_id": 6, "product_id": 2, "quantity": 4, "price": 12.49},
+    {"order_id": 6, "product_id": 4, "quantity": 1, "price": 34.95},
+    {"order_id": 7, "product_id": 2, "quantity": 2, "price": 12.49},
+    {"order_id": 7, "product_id": 4, "quantity": 1, "price": 34.95},
+    {"order_id": 8, "product_id": 3, "quantity": 1, "price": 149.99}
+  ]
+}
+```
+
+### Format 2: CSV Export
+
+**users.csv**:
+```csv
+id,name,email,created_at
+1,Sarah Martinez,sarah.martinez@gmail.com,2022-03-15 10:00:00
+2,James Wilson,james.wilson@yahoo.com,2022-06-22 14:30:00
+3,Maria Garcia,maria.garcia@outlook.com,2023-01-10 09:15:00
+4,David Nguyen,david.nguyen@icloud.com,2023-04-05 11:45:00
+5,Jennifer Taylor,jennifer.taylor42@gmail.com,2023-07-18 16:20:00
+```
+
+**products.csv**:
+```csv
+id,sku,name,price,stock
+1,PROD-1234-A5B,Wireless Headphones,79.99,150
+2,PROD-5678-C2D,USB-C Cable,12.49,500
+3,PROD-9012-E3F,Mechanical Keyboard,149.99,75
+4,PROD-3456-G7H,Laptop Stand,34.95,200
+5,PROD-7890-I1J,Wireless Mouse,24.99,300
+```
+
+**orders.csv**:
+```csv
+id,user_id,total,status,created_at
+1,2,127.48,completed,2024-01-08 14:30:00
+2,1,89.99,completed,2024-01-09 10:15:00
+3,4,142.50,pending,2024-01-10 16:45:00
+4,2,73.95,completed,2024-01-11 09:20:00
+5,1,105.47,pending,2024-01-12 13:10:00
+6,3,98.99,completed,2024-01-15 11:30:00
+7,5,64.99,pending,2024-01-16 15:00:00
+8,4,118.75,completed,2024-01-17 10:45:00
+```
+
+**order_items.csv**:
+```csv
+order_id,product_id,quantity,price
+1,1,1,79.99
+1,2,2,12.49
+1,5,1,24.99
+2,1,1,79.99
+2,2,1,12.49
+3,2,3,12.49
+3,3,1,149.99
+3,5,1,24.99
+4,2,2,12.49
+4,4,1,34.95
+4,5,1,24.99
+5,1,1,79.99
+5,5,1,24.99
+6,2,4,12.49
+6,4,1,34.95
+7,2,2,12.49
+7,4,1,34.95
+8,3,1,149.99
+```
+
+### Format Consistency Validation
+
+**Pre-Delivery Consistency Check**:
+
+| Validation Check | SQL | JSON | CSV | Status |
+| ---------------- | --- | ---- | --- | ------ |
+| **Record Count** | 33 | 33 | 33 | ✅ PASS |
+| **users records** | 5 | 5 | 5 | ✅ PASS |
+| **products records** | 5 | 5 | 5 | ✅ PASS |
+| **orders records** | 8 | 8 | 8 | ✅ PASS |
+| **order_items records** | 15 | 15 | 15 | ✅ PASS |
+| **users.id values** | [1,2,3,4,5] | [1,2,3,4,5] | [1,2,3,4,5] | ✅ PASS |
+| **products.id values** | [1,2,3,4,5] | [1,2,3,4,5] | [1,2,3,4,5] | ✅ PASS |
+| **orders.id values** | [1..8] | [1..8] | [1..8] | ✅ PASS |
+| **orders.user_id FKs** | All in [1..5] | All in [1..5] | All in [1..5] | ✅ PASS |
+| **order_items.order_id FKs** | All in [1..8] | All in [1..8] | All in [1..8] | ✅ PASS |
+| **order_items.product_id FKs** | All in [1..5] | All in [1..5] | All in [1..5] | ✅ PASS |
+
+**Consistency Report**:
+
+✅ **All formats validated successfully**:
+- Record counts match across SQL, JSON, CSV (33 total records)
+- Primary key values identical in all formats
+- Foreign key values identical in all formats
+- No data loss during serialization
+- Referential integrity maintained across all formats
+
+**Constitutional Principle**: Single generation pass → multiple serializations → guaranteed consistency
+
+**See**: [Export Formats Workflow](../../workflows/05-export-formats.md) for consistency validation strategy
+
+---
+
 ## Validation Report
 
 ### Generation Metadata
@@ -504,12 +760,24 @@ generate_data --schema ecommerce.sql --seed 42 --counts users:5,products:5,order
 | **Temporal Patterns** | 75% weekday orders, 25% weekend orders (realistic shopping behavior) |
 | **Locale Formatting** | US English patterns throughout (names, emails match US conventions) |
 
+### User Story 4: Multi-Format Export (NEW)
+
+| Pattern | Example in This Dataset |
+|---------|-------------------------|
+| **Single Generation Pass** | Data generated once, serialized to 3 formats (SQL, JSON, CSV) |
+| **Format Consistency** | Identical data across all formats (33 records validated) |
+| **JSON Flat Structure** | One array per table, FKs as ID references (not nested) |
+| **CSV One-File-Per-Table** | 4 CSV files (users, products, orders, order_items) |
+| **Pre-Delivery Validation** | Consistency check before output (record counts, PK/FK values) |
+| **Reproducibility Across Formats** | Same seed → identical data in all formats |
+
 **See**:
 
 - [Constraint Handling Pattern](../../patterns/constraint-handling.md)
 - [Distribution Strategies Pattern](../../patterns/distribution-strategies.md) - NEW (US2)
 - [Locale Patterns](../../patterns/locale-patterns.md) - NEW (US2)
 - [Dependency Graphing Workflow](../../workflows/02-dependency-graphing.md)
+- [Export Formats Workflow](../../workflows/05-export-formats.md) - NEW (US4)
 
 ---
 
@@ -573,9 +841,10 @@ Edge cases to add:
 ---
 
 **Related**:
-- **Workflows**: [Schema Analysis](../../workflows/01-schema-analysis.md), [Dependency Graphing](../../workflows/02-dependency-graphing.md), [Data Generation](../../workflows/03-data-generation.md), [Validation](../../workflows/04-validation.md)
-- **Patterns**: [Constraint Handling](../../patterns/constraint-handling.md), [Reproducibility](../../patterns/reproducibility.md)
-- **Templates**: [Validation Report](../../templates/validation-report.md), [SQL Insert Format](../../templates/sql-insert-format.md)
+
+- **Workflows**: [Schema Analysis](../../workflows/01-schema-analysis.md), [Dependency Graphing](../../workflows/02-dependency-graphing.md), [Data Generation](../../workflows/03-data-generation.md), [Validation](../../workflows/04-validation.md), [Export Formats](../../workflows/05-export-formats.md)
+- **Patterns**: [Constraint Handling](../../patterns/constraint-handling.md), [Distribution Strategies](../../patterns/distribution-strategies.md), [Locale Patterns](../../patterns/locale-patterns.md), [Reproducibility](../../patterns/reproducibility.md)
+- **Templates**: [Validation Report](../../templates/validation-report.md), [SQL Insert Format](../../templates/sql-insert-format.md), [JSON Export Format](../../templates/json-export-format.md), [CSV Export Format](../../templates/csv-export-format.md)
 
 ---
 

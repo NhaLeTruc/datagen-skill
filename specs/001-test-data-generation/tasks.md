@@ -148,16 +148,16 @@ description: "Task list for test data generation skill implementation"
 
 ### Workflows for User Story 4
 
-- [ ] T032 [US4] Create 05-export-formats.md workflow in .claude/skills/test-data-generation/workflows/05-export-formats.md documenting SQL INSERT format (one statement per record, proper escaping), JSON array format (proper nesting for relationships), CSV format (headers, proper quoting/escaping for special characters), consistency validation (generate once in memory, serialize to each format, run consistency check comparing record counts and key field values across all formats before delivery)
+- [x] T032 [US4] Create 05-export-formats.md workflow in .claude/skills/test-data-generation/workflows/05-export-formats.md documenting SQL INSERT format (one statement per record, proper escaping), JSON array format (proper nesting for relationships), CSV format (headers, proper quoting/escaping for special characters), consistency validation (generate once in memory, serialize to each format, run consistency check comparing record counts and key field values across all formats before delivery)
 
 ### Templates for User Story 4
 
-- [ ] T033 [P] [US4] Create json-export-format.md template in .claude/skills/test-data-generation/templates/json-export-format.md with JSON array structure, nesting for relationships, proper JSON escaping, example output
-- [ ] T034 [P] [US4] Create csv-export-format.md template in .claude/skills/test-data-generation/templates/csv-export-format.md with header row format, quoting rules for special characters (commas, quotes, newlines), escaping rules, example output
+- [x] T033 [P] [US4] Create json-export-format.md template in .claude/skills/test-data-generation/templates/json-export-format.md with JSON array structure, nesting for relationships, proper JSON escaping, example output
+- [x] T034 [P] [US4] Create csv-export-format.md template in .claude/skills/test-data-generation/templates/csv-export-format.md with header row format, quoting rules for special characters (commas, quotes, newlines), escaping rules, example output
 
 ### Examples for User Story 4
 
-- [ ] T035 [US4] Update ecommerce-schema.md intermediate example in .claude/skills/test-data-generation/examples/intermediate/ecommerce-schema.md to include SQL, JSON, and CSV outputs for same dataset, demonstrate consistency (record counts match, key values identical), validation note confirming format consistency
+- [x] T035 [US4] Update ecommerce-schema.md intermediate example in .claude/skills/test-data-generation/examples/intermediate/ecommerce-schema.md to include SQL, JSON, and CSV outputs for same dataset, demonstrate consistency (record counts match, key values identical), validation note confirming format consistency
 
 **Checkpoint**: User Story 4 complete - Claude exports data in multiple formats with guaranteed consistency
 
