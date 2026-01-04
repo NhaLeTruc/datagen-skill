@@ -62,10 +62,10 @@ description: "Task list for test data generation skill implementation"
 
 ### Workflows for User Story 1
 
-- [ ] T011 [P] [US1] Create 01-schema-analysis.md workflow in .claude/skills/test-data-generation/workflows/01-schema-analysis.md documenting how to parse SQL DDL, extract constraints (PK, FK, unique, NOT NULL, check, types), identify data types
-- [ ] T012 [P] [US1] Create 02-dependency-graphing.md workflow in .claude/skills/test-data-generation/workflows/02-dependency-graphing.md documenting how to build entity dependency graph from foreign keys, perform topological sort for generation order
-- [ ] T013 [P] [US1] Create 03-data-generation.md workflow in .claude/skills/test-data-generation/workflows/03-data-generation.md documenting parent-before-children generation, constraint satisfaction during value generation, self-referencing FK handling (tiered generation)
-- [ ] T014 [P] [US1] Create 04-validation.md workflow in .claude/skills/test-data-generation/workflows/04-validation.md documenting pre-delivery validation checklist (schema conformance, constraint satisfaction, referential integrity, validation report structure)
+- [x] T011 [P] [US1] Create 01-schema-analysis.md workflow in .claude/skills/test-data-generation/workflows/01-schema-analysis.md documenting how to parse SQL DDL, extract constraints (PK, FK, unique, NOT NULL, check, types), identify data types
+- [x] T012 [P] [US1] Create 02-dependency-graphing.md workflow in .claude/skills/test-data-generation/workflows/02-dependency-graphing.md documenting how to build entity dependency graph from foreign keys, perform topological sort for generation order
+- [x] T013 [P] [US1] Create 03-data-generation.md workflow in .claude/skills/test-data-generation/workflows/03-data-generation.md documenting parent-before-children generation, constraint satisfaction during value generation, self-referencing FK handling (tiered generation)
+- [x] T014 [P] [US1] Create 04-validation.md workflow in .claude/skills/test-data-generation/workflows/04-validation.md documenting pre-delivery validation checklist (schema conformance, constraint satisfaction, referential integrity, validation report structure)
 
 ### Patterns for User Story 1
 
