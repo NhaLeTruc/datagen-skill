@@ -220,31 +220,213 @@ def generate_value(column):
 
 **Realistic Patterns** (see [Locale Patterns](../patterns/locale-patterns.md)):
 
+### Name Generation from Distributions
+
+```python
+# US name distributions (weighted by frequency)
+FIRST_NAMES_MALE = ['James', 'John', 'Robert', 'Michael', 'William', 'David', 'Richard', 'Joseph', 'Thomas', 'Christopher', 'Daniel', 'Matthew', 'Anthony', 'Mark', 'Donald', 'Steven', 'Andrew', 'Paul', 'Joshua', 'Kenneth']
+FIRST_NAMES_FEMALE = ['Mary', 'Patricia', 'Jennifer', 'Linda', 'Barbara', 'Elizabeth', 'Susan', 'Jessica', 'Sarah', 'Karen', 'Lisa', 'Nancy', 'Betty', 'Margaret', 'Sandra', 'Ashley', 'Kimberly', 'Emily', 'Donna', 'Michelle']
+LAST_NAMES = ['Smith', 'Johnson', 'Williams', 'Brown', 'Jones', 'Garcia', 'Miller', 'Davis', 'Rodriguez', 'Martinez', 'Hernandez', 'Lopez', 'Gonzalez', 'Wilson', 'Anderson', 'Thomas', 'Taylor', 'Moore', 'Jackson', 'Martin', 'Lee', 'Perez', 'Thompson', 'White', 'Harris', 'Sanchez', 'Clark', 'Ramirez', 'Lewis', 'Robinson', 'Walker', 'Young', 'Allen', 'King', 'Wright', 'Scott', 'Torres', 'Nguyen', 'Hill', 'Flores', 'Green', 'Adams', 'Nelson', 'Baker', 'Hall', 'Rivera', 'Campbell', 'Mitchell', 'Carter', 'Roberts']
+
+def generate_realistic_name():
+    # 50/50 male/female distribution
+    if random.random() < 0.5:
+        first = random.choice(FIRST_NAMES_MALE)
+    else:
+        first = random.choice(FIRST_NAMES_FEMALE)
+
+    last = random.choice(LAST_NAMES)
+    return f"{first} {last}"
+```
+
+### Email Generation with Realistic Domains
+
+```python
+EMAIL_DOMAINS = ['gmail.com', 'yahoo.com', 'hotmail.com', 'outlook.com', 'icloud.com', 'example.com', 'company.com', 'mail.com']
+
+def generate_realistic_email(name=None):
+    if name is None:
+        name = generate_realistic_name()
+
+    first, last = name.lower().split(' ')
+
+    # Various email formats
+    format_choice = random.randint(1, 5)
+    if format_choice == 1:
+        username = f"{first}.{last}"
+    elif format_choice == 2:
+        username = f"{first}{last}"
+    elif format_choice == 3:
+        username = f"{first[0]}{last}"
+    elif format_choice == 4:
+        username = f"{first}.{last}{random.randint(1, 999)}"
+    else:
+        username = f"{first}_{last}"
+
+    domain = random.choice(EMAIL_DOMAINS)
+    return f"{username}@{domain}"
+```
+
+### Address Generation with Locale Formatting
+
+```python
+# US address components
+STREET_NAMES = ['Main', 'Oak', 'Maple', 'Cedar', 'Elm', 'Washington', 'Lake', 'Hill', 'Park', 'Pine', 'First', 'Second', 'Third', 'Broadway', 'Market', 'Church', 'Spring', 'Center', 'High', 'School']
+STREET_TYPES = ['St', 'Ave', 'Blvd', 'Dr', 'Ln', 'Rd', 'Ct', 'Way', 'Pl', 'Ter']
+US_STATES = {
+    'AL': 'Alabama', 'AK': 'Alaska', 'AZ': 'Arizona', 'AR': 'Arkansas', 'CA': 'California',
+    'CO': 'Colorado', 'CT': 'Connecticut', 'DE': 'Delaware', 'FL': 'Florida', 'GA': 'Georgia',
+    'HI': 'Hawaii', 'ID': 'Idaho', 'IL': 'Illinois', 'IN': 'Indiana', 'IA': 'Iowa',
+    'KS': 'Kansas', 'KY': 'Kentucky', 'LA': 'Louisiana', 'ME': 'Maine', 'MD': 'Maryland',
+    'MA': 'Massachusetts', 'MI': 'Michigan', 'MN': 'Minnesota', 'MS': 'Mississippi', 'MO': 'Missouri',
+    'MT': 'Montana', 'NE': 'Nebraska', 'NV': 'Nevada', 'NH': 'New Hampshire', 'NJ': 'New Jersey',
+    'NM': 'New Mexico', 'NY': 'New York', 'NC': 'North Carolina', 'ND': 'North Dakota', 'OH': 'Ohio',
+    'OK': 'Oklahoma', 'OR': 'Oregon', 'PA': 'Pennsylvania', 'RI': 'Rhode Island', 'SC': 'South Carolina',
+    'SD': 'South Dakota', 'TN': 'Tennessee', 'TX': 'Texas', 'UT': 'Utah', 'VT': 'Vermont',
+    'VA': 'Virginia', 'WA': 'Washington', 'WV': 'West Virginia', 'WI': 'Wisconsin', 'WY': 'Wyoming'
+}
+
+def generate_us_address():
+    street_number = random.randint(1, 9999)
+    street_name = random.choice(STREET_NAMES)
+    street_type = random.choice(STREET_TYPES)
+    return f"{street_number} {street_name} {street_type}"
+
+def generate_us_city():
+    CITIES = ['New York', 'Los Angeles', 'Chicago', 'Houston', 'Phoenix', 'Philadelphia',
+              'San Antonio', 'San Diego', 'Dallas', 'San Jose', 'Austin', 'Jacksonville',
+              'Fort Worth', 'Columbus', 'Charlotte', 'San Francisco', 'Indianapolis', 'Seattle',
+              'Denver', 'Boston', 'Portland', 'Nashville', 'Memphis', 'Detroit', 'Baltimore']
+    return random.choice(CITIES)
+
+def generate_us_state_code():
+    return random.choice(list(US_STATES.keys()))
+
+def generate_us_zip_code():
+    return f"{random.randint(10000, 99999)}"
+
+def generate_full_us_address():
+    return {
+        'street': generate_us_address(),
+        'city': generate_us_city(),
+        'state': generate_us_state_code(),
+        'zip': generate_us_zip_code()
+    }
+```
+
+### Phone Number Generation (US Format)
+
+```python
+def generate_us_phone():
+    # (XXX) XXX-XXXX format
+    area_code = random.randint(200, 999)  # Valid area codes 200-999
+    exchange = random.randint(200, 999)   # Valid exchanges 200-999
+    subscriber = random.randint(1000, 9999)
+    return f"({area_code}) {exchange}-{subscriber}"
+```
+
+### Product and Content Generation
+
+```python
+# Product categories and realistic names
+PRODUCT_CATEGORIES = {
+    'Electronics': ['Wireless Headphones', 'USB-C Cable', 'Laptop Stand', 'Wireless Mouse',
+                   'Mechanical Keyboard', 'Webcam', 'Monitor Arm', 'Cable Organizer',
+                   'Power Bank', 'Phone Case', 'Screen Protector', 'Charging Dock'],
+    'Accessories': ['Desk Mat', 'Blue Light Glasses', 'Notebook', 'Pen Set', 'Water Bottle',
+                   'Backpack', 'Laptop Bag', 'Mousepad', 'Desk Organizer'],
+    'Furniture': ['Office Chair', 'Standing Desk', 'Bookshelf', 'Filing Cabinet', 'Desk Lamp']
+}
+
+def generate_product_name():
+    category = random.choice(list(PRODUCT_CATEGORIES.keys()))
+    return random.choice(PRODUCT_CATEGORIES[category])
+
+def generate_product_description(name):
+    ADJECTIVES = ['high-quality', 'durable', 'premium', 'professional', 'ergonomic', 'compact', 'portable', 'versatile']
+    FEATURES = ['with fast charging support', 'with noise cancellation', 'with adjustable height',
+                'with RGB lighting', 'with wireless connectivity', 'with long battery life']
+
+    adj = random.choice(ADJECTIVES)
+    feature = random.choice(FEATURES) if random.random() < 0.7 else ''
+
+    return f"{adj.capitalize()} {name.lower()} {feature}".strip() + '.'
+
+# Blog/content generation
+BLOG_TITLE_PATTERNS = [
+    "How to {verb} {topic}",
+    "{number} Ways to {verb} {topic}",
+    "The Ultimate Guide to {topic}",
+    "Why {topic} Matters in {year}",
+    "{topic}: Best Practices and Tips"
+]
+
+VERBS = ['improve', 'optimize', 'master', 'understand', 'build', 'create', 'design', 'develop']
+TOPICS = ['web development', 'data analysis', 'machine learning', 'cloud computing', 'cybersecurity',
+          'mobile apps', 'database design', 'API development']
+
+def generate_blog_title():
+    pattern = random.choice(BLOG_TITLE_PATTERNS)
+    return pattern.format(
+        verb=random.choice(VERBS),
+        topic=random.choice(TOPICS),
+        number=random.choice([3, 5, 7, 10]),
+        year=random.randint(2023, 2026)
+    )
+```
+
+### Master Generator Function
+
 ```python
 def generate_realistic_string(max_length, column_name):
     if 'email' in column_name.lower():
-        return f"{random_first_name()}.{random_last_name()}@example.com"
+        value = generate_realistic_email()
+    elif 'name' in column_name.lower() and 'first' in column_name.lower():
+        value = random.choice(FIRST_NAMES_MALE + FIRST_NAMES_FEMALE)
+    elif 'name' in column_name.lower() and 'last' in column_name.lower():
+        value = random.choice(LAST_NAMES)
     elif 'name' in column_name.lower():
-        return f"{random_first_name()} {random_last_name()}"
+        value = generate_realistic_name()
     elif 'phone' in column_name.lower():
-        return f"({random.randint(200,999)}) {random.randint(100,999)}-{random.randint(1000,9999)}"
-    elif 'address' in column_name.lower():
-        return f"{random.randint(1,9999)} {random_street_name()} St"
+        value = generate_us_phone()
+    elif 'address' in column_name.lower() or 'street' in column_name.lower():
+        value = generate_us_address()
+    elif 'city' in column_name.lower():
+        value = generate_us_city()
+    elif 'state' in column_name.lower():
+        value = generate_us_state_code()
+    elif 'zip' in column_name.lower() or 'postal' in column_name.lower():
+        value = generate_us_zip_code()
+    elif 'title' in column_name.lower():
+        value = generate_blog_title()
+    elif 'description' in column_name.lower():
+        value = generate_product_description("product")
+    elif 'sku' in column_name.lower():
+        value = f"PROD-{random.randint(1000, 9999)}-{random.choice('ABCDEFGHIJKLMNOPQRSTUVWXYZ')}{random.randint(1, 9)}{random.choice('ABCDEFGHIJKLMNOPQRSTUVWXYZ')}"
     else:
         # Generic string
-        return random_string(max_length)
+        value = random_string(max_length)
+
+    # Truncate if exceeds max length
+    if len(value) > max_length:
+        value = value[:max_length]
+
+    return value
 ```
 
-**Example**:
+**Example Output**:
 ```sql
--- Realistic patterns
-INSERT INTO users (name, email, phone) VALUES
-  ('Sarah Chen', 'sarah.chen@example.com', '(415) 555-1234'),
-  ('James Wilson', 'james.wilson@example.com', '(415) 555-5678');
+-- Realistic patterns (US locale)
+INSERT INTO users (name, email, phone, address, city, state, zip) VALUES
+  ('Sarah Chen', 'sarah.chen@gmail.com', '(415) 555-1234', '123 Main St', 'San Francisco', 'CA', '94102'),
+  ('James Wilson', 'james.wilson@outlook.com', '(212) 555-5678', '456 Oak Ave', 'New York', 'NY', '10001'),
+  ('Maria Garcia', 'maria.garcia@yahoo.com', '(713) 555-9012', '789 Elm Blvd', 'Houston', 'TX', '77001');
 
 -- NOT unrealistic patterns like:
--- ('User 1', 'test1@test.com', '1111111111')
+-- ('User 1', 'test1@test.com', '1111111111', 'Address 1', 'City', 'XX', '00000')
 ```
+
+**See**: [Locale Patterns](../patterns/locale-patterns.md) for full US English patterns and locale fallback strategy
 
 ---
 

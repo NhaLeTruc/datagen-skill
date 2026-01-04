@@ -96,21 +96,21 @@ description: "Task list for test data generation skill implementation"
 
 ### Workflows for User Story 2
 
-- [ ] T021 [US2] Update 03-data-generation.md workflow in .claude/skills/test-data-generation/workflows/03-data-generation.md to add realistic pattern generation (names from name distributions, addresses with locale formatting, emails with realistic domains, temporal patterns for timestamps)
+- [x] T021 [US2] Update 03-data-generation.md workflow in .claude/skills/test-data-generation/workflows/03-data-generation.md to add realistic pattern generation (names from name distributions, addresses with locale formatting, emails with realistic domains, temporal patterns for timestamps)
 
 ### Patterns for User Story 2
 
-- [ ] T022 [P] [US2] Create distribution-strategies.md pattern in .claude/skills/test-data-generation/patterns/distribution-strategies.md documenting Zipf distribution (product popularity, user activity), normal distribution (measurements, quantities), uniform distribution (default), when to use each
-- [ ] T023 [P] [US2] Create locale-patterns.md pattern in .claude/skills/test-data-generation/patterns/locale-patterns.md documenting US English patterns (US addresses with state codes and ZIP codes, phone numbers (XXX) XXX-XXXX format, names from US distributions), locale fallback strategy (unsupported locales → US English with warning)
+- [x] T022 [P] [US2] Create distribution-strategies.md pattern in .claude/skills/test-data-generation/patterns/distribution-strategies.md documenting Zipf distribution (product popularity, user activity), normal distribution (measurements, quantities), uniform distribution (default), when to use each
+- [x] T023 [P] [US2] Create locale-patterns.md pattern in .claude/skills/test-data-generation/patterns/locale-patterns.md documenting US English patterns (US addresses with state codes and ZIP codes, phone numbers (XXX) XXX-XXXX format, names from US distributions), locale fallback strategy (unsupported locales → US English with warning)
 
 ### Examples for User Story 2
 
-- [ ] T024 [US2] Update ecommerce-schema.md intermediate example in .claude/skills/test-data-generation/examples/intermediate/ecommerce-schema.md to add realistic patterns (names from distributions not random strings, addresses with valid US state codes and ZIP patterns, temporal ordering: more orders on weekdays, Zipf distribution for product popularity in orders), validation report showing distribution analysis
+- [x] T024 [US2] Update ecommerce-schema.md intermediate example in .claude/skills/test-data-generation/examples/intermediate/ecommerce-schema.md to add realistic patterns (names from distributions not random strings, addresses with valid US state codes and ZIP patterns, temporal ordering: more orders on weekdays, Zipf distribution for product popularity in orders), validation report showing distribution analysis
 
 ### Advanced Examples for User Story 2
 
-- [ ] T025 [P] [US2] Create blog-platform.md intermediate example in .claude/skills/test-data-generation/examples/intermediate/blog-platform.md with multi-table schema (users, posts, comments, tags), realistic patterns (author names, post titles, temporal patterns for publication dates), validation report
-- [ ] T026 [P] [US2] Create self-referencing-hierarchies.md advanced example in .claude/skills/test-data-generation/examples/advanced/self-referencing-hierarchies.md with Employee.managerId → Employee.id schema, tiered generation (first employees NULL managerId, subsequent reference earlier employees), realistic organizational hierarchy
+- [x] T025 [P] [US2] Create blog-platform.md intermediate example in .claude/skills/test-data-generation/examples/intermediate/blog-platform.md with multi-table schema (users, posts, comments, tags), realistic patterns (author names, post titles, temporal patterns for publication dates), validation report
+- [x] T026 [P] [US2] Create self-referencing-hierarchies.md advanced example in .claude/skills/test-data-generation/examples/advanced/self-referencing-hierarchies.md with Employee.managerId → Employee.id schema, tiered generation (first employees NULL managerId, subsequent reference earlier employees), realistic organizational hierarchy
 
 **Checkpoint**: User Story 2 complete - Claude generates production-like data patterns with realistic distributions and locale-appropriate formatting
 
