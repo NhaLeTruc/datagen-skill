@@ -124,17 +124,17 @@ description: "Task list for test data generation skill implementation"
 
 ### Patterns for User Story 3
 
-- [ ] T027 [US3] Create edge-case-catalog.md pattern in .claude/skills/test-data-generation/patterns/edge-case-catalog.md documenting edge cases per SQL data type (VARCHAR: min length 0, max length, special characters, unicode; INT: 0, negative, max value; DATE: epoch 1970-01-01, 2038 problem 2038-01-19, far future; DECIMAL: 0.00, max precision; BOOLEAN: both true and false; NULL for optional fields)
+- [x] T027 [US3] Create edge-case-catalog.md pattern in .claude/skills/test-data-generation/patterns/edge-case-catalog.md documenting edge cases per SQL data type (VARCHAR: min length 0, max length, special characters, unicode; INT: 0, negative, max value; DATE: epoch 1970-01-01, 2038 problem 2038-01-19, far future; DECIMAL: 0.00, max precision; BOOLEAN: both true and false; NULL for optional fields)
 
 ### Workflow Updates for User Story 3
 
-- [ ] T028 [US3] Update 03-data-generation.md workflow in .claude/skills/test-data-generation/workflows/03-data-generation.md to add edge case injection at configurable percentage, constraint-first principle (skip edge cases that violate constraints, document skipped cases in validation report)
+- [x] T028 [US3] Update 03-data-generation.md workflow in .claude/skills/test-data-generation/workflows/03-data-generation.md to add edge case injection at configurable percentage, constraint-first principle (skip edge cases that violate constraints, document skipped cases in validation report)
 
 ### Examples for User Story 3
 
-- [ ] T029 [US3] Update users-table.md basic example in .claude/skills/test-data-generation/examples/basic/users-table.md to add edge cases (user with age=18 for min age check constraint, user with 255-char name for max length, user with special characters in email like test+tag@example.com, edge case coverage 5% documented in validation report)
-- [ ] T030 [P] [US3] Create circular-dependencies.md advanced example in .claude/skills/test-data-generation/examples/advanced/circular-dependencies.md with circular FK scenario (e.g., Department.managerId → Employee.id, Employee.departmentId → Department.id), resolution strategy (break cycle by generating one entity first with NULL, then other entity, then update), edge case: NULL foreign keys
-- [ ] T031 [P] [US3] Create multi-tenant-system.md advanced example in .claude/skills/test-data-generation/examples/advanced/multi-tenant-system.md with complex multi-table schema including tenant isolation, edge cases (tenant with 0 users, tenant with max users, cross-tenant FK handling), validation report
+- [x] T029 [US3] Update users-table.md basic example in .claude/skills/test-data-generation/examples/basic/users-table.md to add edge cases (user with age=18 for min age check constraint, user with 255-char name for max length, user with special characters in email like test+tag@example.com, edge case coverage 5% documented in validation report)
+- [x] T030 [P] [US3] Create circular-dependencies.md advanced example in .claude/skills/test-data-generation/examples/advanced/circular-dependencies.md with circular FK scenario (e.g., Department.managerId → Employee.id, Employee.departmentId → Department.id), resolution strategy (break cycle by generating one entity first with NULL, then other entity, then update), edge case: NULL foreign keys
+- [x] T031 [P] [US3] Create multi-tenant-system.md advanced example in .claude/skills/test-data-generation/examples/advanced/multi-tenant-system.md with complex multi-table schema including tenant isolation, edge cases (tenant with 0 users, tenant with max users, cross-tenant FK handling), validation report
 
 **Checkpoint**: User Story 3 complete - Claude integrates edge cases covering boundary conditions at configurable percentage
 
