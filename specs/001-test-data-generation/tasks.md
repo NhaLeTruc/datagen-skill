@@ -30,12 +30,12 @@ description: "Task list for test data generation skill implementation"
 
 **Purpose**: Create skill directory structure and foundational documentation files
 
-- [ ] T001 Create skill directory structure at .claude/skills/test-data-generation/
-- [ ] T002 [P] Create workflows/ subdirectory in .claude/skills/test-data-generation/workflows/
-- [ ] T003 [P] Create examples/ subdirectory structure in .claude/skills/test-data-generation/examples/ (basic/, intermediate/, advanced/)
-- [ ] T004 [P] Create patterns/ subdirectory in .claude/skills/test-data-generation/patterns/
-- [ ] T005 [P] Create templates/ subdirectory in .claude/skills/test-data-generation/templates/
-- [ ] T006 [P] Create guidelines/ subdirectory in .claude/skills/test-data-generation/guidelines/
+- [x] T001 Create skill directory structure at .claude/skills/test-data-generation/
+- [x] T002 [P] Create workflows/ subdirectory in .claude/skills/test-data-generation/workflows/
+- [x] T003 [P] Create examples/ subdirectory structure in .claude/skills/test-data-generation/examples/ (basic/, intermediate/, advanced/)
+- [x] T004 [P] Create patterns/ subdirectory in .claude/skills/test-data-generation/patterns/
+- [x] T005 [P] Create templates/ subdirectory in .claude/skills/test-data-generation/templates/
+- [x] T006 [P] Create guidelines/ subdirectory in .claude/skills/test-data-generation/guidelines/
 
 ---
 
@@ -45,10 +45,10 @@ description: "Task list for test data generation skill implementation"
 
 **⚠️ CRITICAL**: No user story-specific work can begin until SKILL.md and core workflows are complete
 
-- [ ] T007 Write SKILL.md main entry point in .claude/skills/test-data-generation/SKILL.md with overview, activation patterns, quick start, workflow index, pattern catalog index, examples index
-- [ ] T008 Create constitution-alignment.md in .claude/skills/test-data-generation/guidelines/constitution-alignment.md documenting how skill enforces 5 core principles
-- [ ] T009 Create troubleshooting.md in .claude/skills/test-data-generation/guidelines/troubleshooting.md with common issues and solutions including: schema parsing errors (invalid DDL syntax, unsupported database features), constraint conflicts (impossible check constraints, circular FK without NULL path), generation failures (unable to satisfy unique constraint after N attempts, FK references non-existent parent), validation failures (post-generation constraint violations, referential integrity breaks)
-- [ ] T010 Create common-pitfalls.md in .claude/skills/test-data-generation/guidelines/common-pitfalls.md documenting anti-patterns to avoid
+- [x] T007 Write SKILL.md main entry point in .claude/skills/test-data-generation/SKILL.md with overview, activation patterns, quick start, workflow index, pattern catalog index, examples index
+- [x] T008 Create constitution-alignment.md in .claude/skills/test-data-generation/guidelines/constitution-alignment.md documenting how skill enforces 5 core principles
+- [x] T009 Create troubleshooting.md in .claude/skills/test-data-generation/guidelines/troubleshooting.md with common issues and solutions including: schema parsing errors (invalid DDL syntax, unsupported database features), constraint conflicts (impossible check constraints, circular FK without NULL path), generation failures (unable to satisfy unique constraint after N attempts, FK references non-existent parent), validation failures (post-generation constraint violations, referential integrity breaks)
+- [x] T010 Create common-pitfalls.md in .claude/skills/test-data-generation/guidelines/common-pitfalls.md documenting anti-patterns to avoid
 
 **Checkpoint**: Foundation ready - user story workflows and examples can now be created in parallel
 
