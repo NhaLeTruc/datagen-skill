@@ -79,45 +79,47 @@ A developer needs test data in JSON format for application fixtures, while a DBA
 
 ### Edge Cases
 
-- Circular/self-referencing foreign keys (e.g., Employee.managerId → Employee.id): Handled via tiered generation where initial records have NULL, subsequent records reference earlier records to form hierarchies
-- Self-referencing hierarchical structures (e.g., Category.parentCategoryId): Same tiered approach creates realistic tree structures
-- Check constraint conflicts with edge cases (e.g., age >= 18 but edge case needs age = 0): Constraint compliance takes precedence - conflicting edge cases are skipped and documented in validation report
-- Memory limits with large volumes (e.g., 10 million records): Automatic streaming/batching - data generated and written in chunks (e.g., 10k records per batch) progressively to prevent memory overflow
-- Unsupported locale requests (e.g., requesting Finnish locale when only US English supported): System falls back to US English locale with warning documented in validation report
-- How are extremely large cardinalities handled (e.g., one user with 10,000 orders)?
-- How does the system handle schema changes between generation requests?
+The following complex scenarios and their resolution strategies are documented. See [Clarifications](#clarifications) section for detailed clarification session.
+
+- Circular/self-referencing foreign keys (e.g., Employee.managerId → Employee.id)
+- Self-referencing hierarchical structures (e.g., Category.parentCategoryId)
+- Check constraint conflicts with edge cases (e.g., age >= 18 but edge case needs age = 0)
+- Memory limits with large volumes (e.g., 10 million records)
+- Unsupported locale requests (e.g., requesting Finnish locale when only US English supported)
+- Extremely large cardinalities (e.g., one user with 10,000 orders)
+- Schema changes between generation requests
 
 ## Requirements *(mandatory)*
 
 ### Functional Requirements
 
-- **FR-001**: System MUST accept database schema input in standard formats (SQL DDL, JSON schema, ORM model definitions)
-- **FR-002**: System MUST analyze schema to identify all constraints (primary keys, foreign keys, unique, NOT NULL, check constraints, data types)
-- **FR-003**: System MUST generate data that satisfies all identified constraints with zero violations
-- **FR-004**: System MUST support specifying data volume (number of records per entity)
-- **FR-005**: System MUST perform topological sort of entities to generate parent records before children in foreign key relationships
-- **FR-006**: System MUST validate all generated data against schema constraints before delivery
-- **FR-007**: System MUST provide validation report documenting constraint satisfaction
-- **FR-008**: System MUST support reproducible generation via seeding mechanism
-- **FR-009**: System MUST generate realistic data patterns (names, addresses, emails, phone numbers) appropriate to specified locale (default: US English), falling back to US English with warning for unsupported locales
-- **FR-010**: System MUST support configurable data distributions (uniform, Zipf, normal) for applicable fields
-- **FR-011**: System MUST include edge cases at configurable percentage (default: 5%), but MUST skip edge cases that violate schema constraints and document skipped cases in validation report
-- **FR-012**: System MUST export data in SQL INSERT format with proper escaping
-- **FR-013**: System MUST export data in JSON array format with proper nesting
-- **FR-014**: System MUST export data in CSV format with headers and proper quoting
-- **FR-015**: System MUST document generation parameters (schema version, seed, volume, distribution settings) in output metadata
-- **FR-016**: System MUST handle self-referencing foreign keys using tiered generation: first records (root nodes) have NULL values, subsequent records reference earlier records to create realistic hierarchies
-- **FR-017**: System MUST respect cascade delete/update semantics when generating related records
-- **FR-018**: System MUST automatically use streaming/batching for large datasets (>100k records) to prevent memory overflow, writing data progressively in chunks with progress reporting
-- **FR-019**: System MUST fail gracefully with clear error messages when schema is invalid or unparseable
-- **FR-020**: System MUST support custom value generators for domain-specific fields (e.g., custom product SKU format)
+- **FR-001**: Claude MUST accept database schema input in standard formats (SQL DDL, JSON schema, ORM model definitions)
+- **FR-002**: Claude MUST analyze schema to identify all constraints (primary keys, foreign keys, unique, NOT NULL, check constraints, data types)
+- **FR-003**: Generated data MUST satisfy all identified constraints with zero violations
+- **FR-004**: Claude MUST support specifying data volume (number of records per entity)
+- **FR-005**: Claude MUST perform topological sort of entities to generate parent records before children in foreign key relationships
+- **FR-006**: Generated data MUST be validated against schema constraints before delivery
+- **FR-007**: Claude MUST provide validation report documenting constraint satisfaction
+- **FR-008**: Claude MUST support reproducible generation via seeding mechanism
+- **FR-009**: Generated data MUST include realistic data patterns (names, addresses, emails, phone numbers) appropriate to specified locale (default: US English), falling back to US English with warning for unsupported locales
+- **FR-010**: Claude MUST support configurable data distributions (uniform, Zipf, normal) for applicable fields
+- **FR-011**: Generated data MUST include edge cases at configurable percentage (default: 5%), but MUST skip edge cases that violate schema constraints and document skipped cases in validation report
+- **FR-012**: Generated data MUST be exportable in SQL INSERT format with proper escaping
+- **FR-013**: Generated data MUST be exportable in JSON array format with proper nesting
+- **FR-014**: Generated data MUST be exportable in CSV format with headers and proper quoting
+- **FR-015**: Claude MUST document generation parameters (schema version, seed, volume, distribution settings) in output metadata
+- **FR-016**: Claude MUST handle self-referencing foreign keys using tiered generation: first records (root nodes) have NULL values, subsequent records reference earlier records to create realistic hierarchies
+- **FR-017**: Claude MUST respect cascade delete/update semantics when generating related records
+- **FR-018**: Claude MUST automatically use streaming/batching for large datasets (>100k records) to prevent memory overflow, writing data progressively in chunks with progress reporting
+- **FR-019**: Claude MUST fail gracefully with clear error messages when schema is invalid or unparseable
+- **FR-020**: Claude MUST support custom value generators for domain-specific fields (e.g., custom product SKU format)
 
 ### Key Entities *(include if feature involves data)*
 
-- **Database Schema**: Represents the structure of the target database, including tables, columns, data types, constraints, and relationships. Input to the system.
+- **Database Schema**: Represents the structure of the target database, including tables, columns, data types, constraints, and relationships. Input provided by the user.
 - **Entity Dependency Graph**: Internal representation of foreign key relationships used for topological sorting to ensure parent records are generated before children.
 - **Generation Configuration**: User-specified parameters including volume (records per table), seed (for reproducibility), edge case percentage, locale, distribution types, and output formats.
-- **Constraint Validator**: Component that verifies generated data satisfies all schema constraints (uniqueness, referential integrity, check constraints, NOT NULL, data types).
+- **Constraint Validator**: Component of Claude's generation workflow that verifies generated data satisfies all schema constraints (uniqueness, referential integrity, check constraints, NOT NULL, data types).
 - **Data Record**: Individual generated record with values for all columns, respecting data types and constraints.
 - **Validation Report**: Document proving data quality, including constraint satisfaction checks, distribution statistics, edge case coverage, and any warnings or errors.
 - **Output Artifact**: Final deliverable in requested format (SQL, JSON, or CSV) containing generated data and metadata.
@@ -127,7 +129,7 @@ A developer needs test data in JSON format for application fixtures, while a DBA
 ### Measurable Outcomes
 
 - **SC-001**: Generated data loads into target database with zero constraint violation errors in 100% of test cases
-- **SC-002**: System generates 1000 records with complex relationships (3+ tables, 5+ foreign keys) in under 5 seconds
+- **SC-002**: Claude generates 1000 records with complex relationships (3+ tables, 5+ foreign keys) within 5 seconds
 - **SC-003**: Generated datasets pass referential integrity audits with 100% of foreign keys resolving to existing parent records
 - **SC-004**: Edge cases appear at the specified percentage (±2% tolerance) across all generated datasets
 - **SC-005**: Validation report confirms constraint satisfaction before delivery in 100% of generation runs
@@ -151,7 +153,7 @@ A developer needs test data in JSON format for application fixtures, while a DBA
 
 2. **Database Compatibility**: Primary focus on PostgreSQL constraint semantics, with common patterns (foreign keys, unique, NOT NULL, check constraints) that apply across most relational databases. Database-specific features (e.g., PostgreSQL arrays, MySQL ENUM) may require special handling.
 
-3. **Locale Support**: Default realistic data patterns assume US English locale (US addresses, English names, US phone numbers). Other locales require explicit configuration and may have limited pattern libraries initially. Unsupported locales automatically fall back to US English with warning in validation report.
+3. **Locale Support**: Default realistic data patterns assume US English locale (US addresses, English names, US phone numbers). Other locales require explicit configuration and may have limited pattern libraries initially. Unsupported locales automatically fall back to US English with warning in validation report. Note: Locale patterns are documented as examples in skill files; Claude applies these documented patterns during generation rather than calling external locale libraries.
 
 4. **Performance Targets**: Assumes generation runs on modern hardware (4+ CPU cores, 8GB+ RAM). Large datasets (>100k records) automatically use streaming/batching to manage memory efficiently.
 
@@ -201,6 +203,12 @@ Claude must request/clarify these inputs before generating data:
 6. **Locale** (DEFAULT: US English): For realistic pattern generation
 7. **Distribution Types** (DEFAULT: Uniform): For applicable fields (Zipf for popularity, normal for measurements, etc.)
 8. **Custom Constraints** (OPTIONAL): Application-level business rules beyond database constraints
+9. **Custom Value Generators** (OPTIONAL): User-provided patterns for domain-specific fields
+   - Format: "For field X, use pattern Y" or "Generate field X using format ABC-####-XX"
+   - Example: "For product SKU, use format ABC-####-XX where # is digit and X is uppercase letter"
+   - Example: "For employee ID, use pattern EMP-{department_code}-{sequential_5_digits}"
+   - Claude incorporates these patterns into generation logic for those specific fields
+   - If not provided, Claude uses realistic default patterns based on field name and type
 
 ### Expected Outputs
 

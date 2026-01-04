@@ -47,7 +47,7 @@ description: "Task list for test data generation skill implementation"
 
 - [ ] T007 Write SKILL.md main entry point in .claude/skills/test-data-generation/SKILL.md with overview, activation patterns, quick start, workflow index, pattern catalog index, examples index
 - [ ] T008 Create constitution-alignment.md in .claude/skills/test-data-generation/guidelines/constitution-alignment.md documenting how skill enforces 5 core principles
-- [ ] T009 Create troubleshooting.md in .claude/skills/test-data-generation/guidelines/troubleshooting.md with common issues and solutions
+- [ ] T009 Create troubleshooting.md in .claude/skills/test-data-generation/guidelines/troubleshooting.md with common issues and solutions including: schema parsing errors (invalid DDL syntax, unsupported database features), constraint conflicts (impossible check constraints, circular FK without NULL path), generation failures (unable to satisfy unique constraint after N attempts, FK references non-existent parent), validation failures (post-generation constraint violations, referential integrity breaks)
 - [ ] T010 Create common-pitfalls.md in .claude/skills/test-data-generation/guidelines/common-pitfalls.md documenting anti-patterns to avoid
 
 **Checkpoint**: Foundation ready - user story workflows and examples can now be created in parallel
@@ -69,7 +69,9 @@ description: "Task list for test data generation skill implementation"
 
 ### Patterns for User Story 1
 
-- [ ] T015 [US1] Create constraint-handling.md pattern in .claude/skills/test-data-generation/patterns/constraint-handling.md documenting how to handle each constraint type (PK: unique generation, FK: reference existing, unique: track used values, NOT NULL: always generate, check: satisfy conditions, types: match exactly)
+- [ ] T015 [US1] Create constraint-handling.md pattern in .claude/skills/test-data-generation/patterns/constraint-handling.md documenting how to handle each constraint type (PK: unique generation using UUID or sequential IDs, FK: reference pool of existing parent IDs, unique: track used values in set to prevent duplicates, NOT NULL: no skip logic - always generate value, check: parse condition and satisfy constraint, types: match precision/scale/length exactly)
+- [ ] T015b [US1] Document cascade semantics in constraint-handling.md in .claude/skills/test-data-generation/patterns/constraint-handling.md: ON DELETE CASCADE (generate child records that would survive parent deletion), ON DELETE SET NULL (allow nullable FKs to be set NULL), ON UPDATE CASCADE (maintain FK references when parent PK changes), ON DELETE RESTRICT (ensure all generated data respects restriction)
+- [ ] T015c [P] [US1] Create reproducibility.md pattern in .claude/skills/test-data-generation/patterns/reproducibility.md documenting seed initialization for deterministic generation, seed recording in validation reports, deterministic RNG usage for all random values (names, dates, distributions), same seed + same schema = identical output guarantee
 
 ### Examples for User Story 1
 
@@ -146,7 +148,7 @@ description: "Task list for test data generation skill implementation"
 
 ### Workflows for User Story 4
 
-- [ ] T032 [US4] Create 05-export-formats.md workflow in .claude/skills/test-data-generation/workflows/05-export-formats.md documenting SQL INSERT format (one statement per record, proper escaping), JSON array format (proper nesting for relationships), CSV format (headers, proper quoting/escaping for special characters), consistency validation (same data across all formats)
+- [ ] T032 [US4] Create 05-export-formats.md workflow in .claude/skills/test-data-generation/workflows/05-export-formats.md documenting SQL INSERT format (one statement per record, proper escaping), JSON array format (proper nesting for relationships), CSV format (headers, proper quoting/escaping for special characters), consistency validation (generate once in memory, serialize to each format, run consistency check comparing record counts and key field values across all formats before delivery)
 
 ### Templates for User Story 4
 
