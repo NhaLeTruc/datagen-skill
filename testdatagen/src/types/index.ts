@@ -70,14 +70,26 @@ export interface SchemaDefinition {
   tables: TableSchema[];
 }
 
+export interface DistributionConfig {
+  column: string;
+  type: 'zipf' | 'normal';
+  params?: {
+    a?: number;
+    mean?: number;
+    std?: number;
+  };
+}
+
 export interface GenerationOptions {
   count: number;
   seed?: number;
   locale?: string;
-  format?: 'sql' | 'json' | 'csv';
+  format?: 'sql' | 'json' | 'csv' | 'all';
   output?: string;
   edgeCases?: number;
   validate?: boolean;
+  distributions?: DistributionConfig[];
+  config?: string;
 }
 
 export interface GeneratedRecord {
