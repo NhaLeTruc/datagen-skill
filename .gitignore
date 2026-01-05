@@ -1,8 +1,9 @@
+testdatagen/node_modules/
+testdatagen/dist/
 *.csv
 *.parquet
 *.pkl
 *.tsv
-*.json
 *.xlsx
 *.xls
 *.db
