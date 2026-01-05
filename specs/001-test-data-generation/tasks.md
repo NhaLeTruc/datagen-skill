@@ -167,13 +167,13 @@ description: "Task list for test data generation skill implementation"
 
 **Purpose**: Documentation improvements that enhance all user stories
 
-- [ ] T036 [P] Add comprehensive quick start example to SKILL.md in .claude/skills/test-data-generation/SKILL.md showing minimal 30-second workflow (provide simple schema, request generation, receive data + validation report)
-- [ ] T037 [P] Add activation pattern examples to SKILL.md in .claude/skills/test-data-generation/SKILL.md documenting exact phrases Claude should recognize ("Generate test data for [schema]", "I need sample data with [X] records", "Create realistic test data", "Generate SQL/JSON/CSV fixtures")
-- [ ] T038 [P] Add cross-references between workflows in all workflow files (.claude/skills/test-data-generation/workflows/*.md) linking to relevant patterns and examples
-- [ ] T039 [P] Add pattern usage examples in all pattern files (.claude/skills/test-data-generation/patterns/*.md) referencing specific examples that demonstrate each pattern
-- [ ] T040 [P] Review all examples for constitution alignment in .claude/skills/test-data-generation/examples/*/*.md ensuring each demonstrates constraint compliance, referential integrity, edge cases, validation
-- [ ] T041 Add skill metadata/frontmatter to SKILL.md in .claude/skills/test-data-generation/SKILL.md with skill name, version, author, description, tags for discoverability
-- [ ] T042 Create README.md for skill directory in .claude/skills/test-data-generation/README.md with skill overview, file structure explanation, how to extend with custom examples
+- [x] T036 [P] Add comprehensive quick start example to SKILL.md in .claude/skills/test-data-generation/SKILL.md showing minimal 30-second workflow (provide simple schema, request generation, receive data + validation report)
+- [x] T037 [P] Add activation pattern examples to SKILL.md in .claude/skills/test-data-generation/SKILL.md documenting exact phrases Claude should recognize ("Generate test data for [schema]", "I need sample data with [X] records", "Create realistic test data", "Generate SQL/JSON/CSV fixtures")
+- [x] T038 [P] Add cross-references between workflows in all workflow files (.claude/skills/test-data-generation/workflows/*.md) linking to relevant patterns and examples
+- [x] T039 [P] Add pattern usage examples in all pattern files (.claude/skills/test-data-generation/patterns/*.md) referencing specific examples that demonstrate each pattern
+- [x] T040 [P] Review all examples for constitution alignment in .claude/skills/test-data-generation/examples/*/*.md ensuring each demonstrates constraint compliance, referential integrity, edge cases, validation
+- [x] T041 Add skill metadata/frontmatter to SKILL.md in .claude/skills/test-data-generation/SKILL.md with skill name, version, author, description, tags for discoverability
+- [x] T042 Create README.md for skill directory in .claude/skills/test-data-generation/README.md with skill overview, file structure explanation, how to extend with custom examples
 
 ---
 
