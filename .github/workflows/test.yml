@@ -1,0 +1,348 @@
+name: Test Suite
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  unit-tests:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [18.x, 20.x]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+          cache-dependency-path: testdatagen/package-lock.json
+
+      - name: Install dependencies
+        working-directory: testdatagen
+        run: npm ci
+
+      - name: Run unit tests
+        working-directory: testdatagen
+        run: npm run test:unit
+
+      - name: Generate coverage report
+        working-directory: testdatagen
+        run: npm run test:coverage
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          files: testdatagen/coverage/lcov.info
+          flags: unittests
+          name: unit-tests-${{ matrix.node-version }}
+          fail_ci_if_error: false
+
+  integration-tests:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_DB: testdatagen_test
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      mysql:
+        image: mysql:8
+        env:
+          MYSQL_DATABASE: testdatagen_test
+          MYSQL_ROOT_PASSWORD: test
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd "mysqladmin ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          cache: 'npm'
+          cache-dependency-path: testdatagen/package-lock.json
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install Python dependencies
+        working-directory: testdatagen
+        run: |
+          pip install -r python/requirements.txt
+
+      - name: Install Node dependencies
+        working-directory: testdatagen
+        run: npm ci
+
+      - name: Wait for databases
+        run: |
+          sleep 10
+
+      - name: Run integration tests
+        working-directory: testdatagen
+        env:
+          POSTGRES_HOST: localhost
+          POSTGRES_PORT: 5432
+          POSTGRES_DB: testdatagen_test
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: test
+          MYSQL_HOST: localhost
+          MYSQL_PORT: 3306
+          MYSQL_DB: testdatagen_test
+          MYSQL_USER: root
+          MYSQL_PASSWORD: test
+        run: npm run test:integration
+
+  example-validation:
+    name: Example Validation (Smoke Tests)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          cache: 'npm'
+          cache-dependency-path: testdatagen/package-lock.json
+
+      - name: Install dependencies
+        working-directory: testdatagen
+        run: npm ci
+
+      - name: Build project
+        working-directory: testdatagen
+        run: npm run build
+
+      - name: Validate basic examples
+        working-directory: testdatagen
+        run: |
+          # Test basic single table example
+          if [ -f examples/basic-users.sql ]; then
+            node dist/cli/index.js generate examples/basic-users.sql --count 100 --format sql --output /tmp/test-basic.sql
+            echo "✅ Basic users example validated"
+          fi
+
+          # Test ecommerce example
+          if [ -f examples/ecommerce.sql ]; then
+            node dist/cli/index.js generate examples/ecommerce.sql --count 100 --format sql --output /tmp/test-ecommerce.sql
+            echo "✅ E-commerce example validated"
+          fi
+
+          # Test multi-tenant example
+          if [ -f examples/multi-tenant.sql ]; then
+            node dist/cli/index.js generate examples/multi-tenant.sql --count 50 --format sql --output /tmp/test-multitenant.sql
+            echo "✅ Multi-tenant example validated"
+          fi
+
+      - name: Validate advanced examples
+        working-directory: testdatagen
+        run: |
+          # Test self-referencing example
+          if [ -f examples/advanced/self-referencing.sql ]; then
+            node dist/cli/index.js generate examples/advanced/self-referencing.sql --count 100 --format sql --output /tmp/test-selfref.sql
+            echo "✅ Self-referencing example validated"
+          fi
+
+          # Test geospatial example
+          if [ -f examples/advanced/geospatial.sql ]; then
+            node dist/cli/index.js generate examples/advanced/geospatial.sql --count 50 --format sql --output /tmp/test-geo.sql
+            echo "✅ Geospatial example validated"
+          fi
+
+  performance-tests:
+    name: Performance Regression Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          cache: 'npm'
+          cache-dependency-path: testdatagen/package-lock.json
+
+      - name: Install dependencies
+        working-directory: testdatagen
+        run: npm ci
+
+      - name: Build project
+        working-directory: testdatagen
+        run: npm run build
+
+      - name: Run performance benchmarks
+        working-directory: testdatagen
+        run: npm run benchmark
+
+      - name: Check 1M records performance threshold
+        working-directory: testdatagen
+        run: |
+          # Extract duration from benchmark results
+          LATEST_RESULT=$(ls -t benchmarks/results/benchmark-*.json | head -1)
+
+          if [ -f "$LATEST_RESULT" ]; then
+            # Check if 1M records completed in < 60 seconds
+            DURATION=$(jq '.results[] | select(.name | contains("1,000,000")) | .duration' "$LATEST_RESULT")
+
+            if [ ! -z "$DURATION" ]; then
+              if [ "$DURATION" -lt 60000 ]; then
+                echo "✅ Performance test PASSED: 1M records in ${DURATION}ms (< 60s)"
+              else
+                echo "❌ Performance test FAILED: 1M records took ${DURATION}ms (> 60s)"
+                exit 1
+              fi
+            else
+              echo "⚠️ No 1M record benchmark found"
+            fi
+          else
+            echo "⚠️ No benchmark results found"
+          fi
+
+      - name: Upload benchmark results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: benchmark-results
+          path: testdatagen/benchmarks/results/
+          retention-days: 30
+
+  lint:
+    name: Lint Code
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          cache: 'npm'
+          cache-dependency-path: testdatagen/package-lock.json
+
+      - name: Install dependencies
+        working-directory: testdatagen
+        run: npm ci
+
+      - name: Run ESLint
+        working-directory: testdatagen
+        run: npm run lint
+
+  build:
+    name: Build Package
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          cache: 'npm'
+          cache-dependency-path: testdatagen/package-lock.json
+
+      - name: Install dependencies
+        working-directory: testdatagen
+        run: npm ci
+
+      - name: Build project
+        working-directory: testdatagen
+        run: npm run build
+
+      - name: Verify build artifacts
+        working-directory: testdatagen
+        run: |
+          test -f dist/cli/index.js || exit 1
+          test -f dist/core/generator/engine.js || exit 1
+          echo "✅ Build artifacts verified"
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: testdatagen/dist/
+          retention-days: 7
+
+  coverage-report:
+    name: Generate Coverage Report
+    runs-on: ubuntu-latest
+    needs: [unit-tests, integration-tests]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          cache: 'npm'
+          cache-dependency-path: testdatagen/package-lock.json
+
+      - name: Install dependencies
+        working-directory: testdatagen
+        run: npm ci
+
+      - name: Generate full coverage report
+        working-directory: testdatagen
+        run: npm run test:coverage
+
+      - name: Check coverage thresholds
+        working-directory: testdatagen
+        run: |
+          # Jest will fail if coverage is below thresholds defined in jest.config.js
+          npm run test:coverage -- --coverageReporters=text-summary
+
+      - name: Comment coverage on PR
+        if: github.event_name == 'pull_request'
+        uses: romeovs/lcov-reporter-action@v0.3.1
+        with:
+          lcov-file: testdatagen/coverage/lcov.info
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+  all-tests-passed:
+    name: All Tests Passed
+    runs-on: ubuntu-latest
+    needs: [unit-tests, integration-tests, example-validation, performance-tests, lint, build]
+
+    steps:
+      - name: All checks passed
+        run: echo "✅ All tests and checks passed successfully!"

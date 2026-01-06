@@ -1,0 +1,158 @@
+name: Publish to npm
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to publish (e.g., 1.0.0)'
+        required: true
+        type: string
+
+jobs:
+  test:
+    name: Run Tests Before Publishing
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_DB: testdatagen_test
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          registry-url: 'https://registry.npmjs.org'
+          cache: 'npm'
+          cache-dependency-path: testdatagen/package-lock.json
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        working-directory: testdatagen
+        run: |
+          npm ci
+          pip install -r python/requirements.txt
+
+      - name: Run all tests
+        working-directory: testdatagen
+        env:
+          POSTGRES_HOST: localhost
+          POSTGRES_PORT: 5432
+          POSTGRES_DB: testdatagen_test
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: test
+        run: npm test
+
+      - name: Run coverage check
+        working-directory: testdatagen
+        run: npm run test:coverage
+
+  publish:
+    name: Publish to npm
+    runs-on: ubuntu-latest
+    needs: test
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          registry-url: 'https://registry.npmjs.org'
+          cache: 'npm'
+          cache-dependency-path: testdatagen/package-lock.json
+
+      - name: Install dependencies
+        working-directory: testdatagen
+        run: npm ci
+
+      - name: Build package
+        working-directory: testdatagen
+        run: npm run build
+
+      - name: Update version if manual dispatch
+        if: github.event_name == 'workflow_dispatch'
+        working-directory: testdatagen
+        run: npm version ${{ github.event.inputs.version }} --no-git-tag-version
+
+      - name: Verify package contents
+        working-directory: testdatagen
+        run: |
+          npm pack --dry-run
+          echo "✅ Package verification complete"
+
+      - name: Publish to npm
+        working-directory: testdatagen
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: npm publish --access public
+
+      - name: Create GitHub Release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: Release ${{ github.ref }}
+          body: |
+            ## What's Changed
+
+            See [CHANGELOG.md](CHANGELOG.md) for details.
+
+            ## Installation
+
+            ```bash
+            npm install -g @claude-code/testdatagen
+            ```
+          draft: false
+          prerelease: false
+
+  publish-docs:
+    name: Publish Documentation
+    runs-on: ubuntu-latest
+    needs: publish
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+
+      - name: Generate API documentation
+        working-directory: testdatagen
+        run: |
+          npm ci
+          npx typedoc --out docs/api src/index.ts
+
+      - name: Deploy documentation to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: testdatagen/docs
+          destination_dir: docs
