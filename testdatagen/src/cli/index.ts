@@ -2,6 +2,8 @@
 
 import { Command } from 'commander';
 import { createGenerateCommand } from './commands/generate';
+import { createIntrospectCommand } from './commands/introspect';
+import { createInteractiveCommand } from './commands/interactive';
 
 const program = new Command();
 
@@ -11,6 +13,8 @@ program
   .version('1.0.0');
 
 program.addCommand(createGenerateCommand());
+program.addCommand(createIntrospectCommand());
+program.addCommand(createInteractiveCommand());
 
 program.parse(process.argv);
 
