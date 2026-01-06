@@ -80,17 +80,23 @@ export interface DistributionConfig {
   };
 }
 
+export type SupportedLocale = 'en_US' | 'en_GB' | 'de_DE' | 'fr_FR' | 'en_CA' | 'en_AU';
+
 export interface GenerationOptions {
   count: number;
   seed?: number;
-  locale?: string;
+  locale?: SupportedLocale | string;
   format?: 'sql' | 'json' | 'csv' | 'all';
   output?: string;
   edgeCases?: number;
   validate?: boolean;
   distributions?: DistributionConfig[];
   config?: string;
+  streaming?: boolean;
 }
+
+export type TableDefinition = TableSchema;
+export type ConstraintDefinition = Constraint;
 
 export interface GeneratedRecord {
   [columnName: string]: any;
