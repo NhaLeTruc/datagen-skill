@@ -13,6 +13,10 @@
     "test:unit": "jest tests/unit",
     "test:integration": "jest tests/integration",
     "test:coverage": "jest --coverage",
+    "benchmark": "ts-node benchmarks/performance.ts",
+    "benchmark:10k": "ts-node benchmarks/performance.ts --size 10000",
+    "benchmark:100k": "ts-node benchmarks/performance.ts --size 100000",
+    "benchmark:1m": "ts-node benchmarks/performance.ts --size 1000000",
     "lint": "eslint src --ext .ts",
     "prepublishOnly": "npm run build"
   },
