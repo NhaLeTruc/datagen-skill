@@ -7,7 +7,7 @@ import { CSVExporter } from '../../src/core/exporter/csv-exporter';
 import { EdgeCaseInjector } from '../../src/core/generator/edge-case-injector';
 import { ReportGenerator } from '../../src/core/validator/report-generator';
 import { ValueGenerator, SupportedLocale } from '../../src/core/generator/value-generator';
-import { GenerationOptions } from '../../types';
+import { GenerationOptions } from '../../src/types';
 
 describe('Phase 2 Features Integration', () => {
   const testSchema = `

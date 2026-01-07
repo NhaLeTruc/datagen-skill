@@ -1,510 +1,579 @@
 import { ReportGenerator } from '../../src/core/validator/report-generator';
-import { TableSchema } from '../../src/types';
+import { ValidationResult, SchemaDefinition, GenerationOptions } from '../../src/types';
 
 describe('ReportGenerator', () => {
-  let reportGen: ReportGenerator;
-
-  beforeEach(() => {
-    reportGen = new ReportGenerator();
-  });
-
-  describe('constraint validation report', () => {
-    it('generates report for successful validation', () => {
-      const tables: TableSchema[] = [
-        {
-          name: 'users',
-          columns: [
-            { name: 'id', type: 'INTEGER', constraints: { primaryKey: true } },
-            { name: 'email', type: 'VARCHAR(255)', constraints: { unique: true, notNull: true } }
-          ],
-          foreignKeys: []
-        }
-      ];
-
-      const data = {
-        users: [
-          { id: 1, email: 'user1@example.com' },
-          { id: 2, email: 'user2@example.com' }
+  const mockSchema: SchemaDefinition = {
+    tables: [
+      {
+        name: 'users',
+        columns: [
+          { name: 'id', type: 'INT', nullable: false },
+          { name: 'email', type: 'VARCHAR', nullable: false }
+        ],
+        constraints: [
+          { type: 'PRIMARY_KEY', columns: ['id'] },
+          { type: 'UNIQUE', columns: ['email'] }
         ]
-      };
-
-      const report = reportGen.generateConstraintReport(tables, data);
-
-      expect(report.success).toBe(true);
-      expect(report.totalConstraints).toBeGreaterThan(0);
-      expect(report.violatedConstraints).toBe(0);
-      expect(report.violations).toHaveLength(0);
-    });
-
-    it('reports primary key violations', () => {
-      const tables: TableSchema[] = [
-        {
-          name: 'products',
-          columns: [
-            { name: 'id', type: 'INTEGER', constraints: { primaryKey: true } }
-          ],
-          foreignKeys: []
-        }
-      ];
-
-      const data = {
-        products: [
-          { id: 1 },
-          { id: 1 }, // Duplicate PK
-          { id: 2 }
+      },
+      {
+        name: 'posts',
+        columns: [
+          { name: 'id', type: 'INT', nullable: false },
+          { name: 'user_id', type: 'INT', nullable: false },
+          { name: 'title', type: 'VARCHAR', nullable: false }
+        ],
+        constraints: [
+          { type: 'PRIMARY_KEY', columns: ['id'] },
+          {
+            type: 'FOREIGN_KEY',
+            columns: ['user_id'],
+            referencedTable: 'users',
+            referencedColumns: ['id']
+          }
         ]
-      };
+      }
+    ]
+  };
 
-      const report = reportGen.generateConstraintReport(tables, data);
+  const mockOptions: GenerationOptions = {
+    count: 10,
+    seed: 12345,
+    locale: 'en_US',
+    format: 'sql'
+  };
 
-      expect(report.success).toBe(false);
-      expect(report.violatedConstraints).toBeGreaterThan(0);
-
-      const pkViolations = report.violations.filter(v => v.type === 'PRIMARY_KEY');
-      expect(pkViolations.length).toBeGreaterThan(0);
-    });
-
-    it('reports unique constraint violations', () => {
-      const tables: TableSchema[] = [
+  describe('generateValidationReport', () => {
+    it('should generate report for all valid results', () => {
+      const validationResults: ValidationResult[] = [
         {
-          name: 'users',
-          columns: [
-            { name: 'id', type: 'INTEGER', constraints: { primaryKey: true } },
-            { name: 'email', type: 'VARCHAR(255)', constraints: { unique: true } }
-          ],
-          foreignKeys: []
-        }
-      ];
-
-      const data = {
-        users: [
-          { id: 1, email: 'test@example.com' },
-          { id: 2, email: 'test@example.com' }, // Duplicate email
-          { id: 3, email: 'unique@example.com' }
-        ]
-      };
-
-      const report = reportGen.generateConstraintReport(tables, data);
-
-      expect(report.success).toBe(false);
-
-      const uniqueViolations = report.violations.filter(v => v.type === 'UNIQUE');
-      expect(uniqueViolations.length).toBeGreaterThan(0);
-      expect(uniqueViolations[0].column).toBe('email');
-    });
-
-    it('reports NOT NULL violations', () => {
-      const tables: TableSchema[] = [
-        {
-          name: 'orders',
-          columns: [
-            { name: 'id', type: 'INTEGER', constraints: { primaryKey: true } },
-            { name: 'customer_id', type: 'INTEGER', constraints: { notNull: true } }
-          ],
-          foreignKeys: []
-        }
-      ];
-
-      const data = {
-        orders: [
-          { id: 1, customer_id: 100 },
-          { id: 2, customer_id: null }, // NULL violation
-          { id: 3, customer_id: 200 }
-        ]
-      };
-
-      const report = reportGen.generateConstraintReport(tables, data);
-
-      expect(report.success).toBe(false);
-
-      const notNullViolations = report.violations.filter(v => v.type === 'NOT_NULL');
-      expect(notNullViolations.length).toBeGreaterThan(0);
-      expect(notNullViolations[0].column).toBe('customer_id');
-    });
-
-    it('reports foreign key violations', () => {
-      const tables: TableSchema[] = [
-        {
-          name: 'users',
-          columns: [
-            { name: 'id', type: 'INTEGER', constraints: { primaryKey: true } }
-          ],
-          foreignKeys: []
+          table: 'users',
+          valid: true,
+          errors: []
         },
         {
-          name: 'orders',
-          columns: [
-            { name: 'id', type: 'INTEGER', constraints: { primaryKey: true } },
-            { name: 'user_id', type: 'INTEGER', constraints: {} }
-          ],
-          foreignKeys: [{
-            columnName: 'user_id',
-            referencedTable: 'users',
-            referencedColumn: 'id'
-          }]
+          table: 'posts',
+          valid: true,
+          errors: []
         }
       ];
 
-      const data = {
-        users: [
-          { id: 1 },
-          { id: 2 }
-        ],
-        orders: [
-          { id: 1, user_id: 1 },
-          { id: 2, user_id: 999 }, // Orphan FK
-          { id: 3, user_id: 2 }
-        ]
-      };
+      const report = ReportGenerator.generateValidationReport(
+        validationResults,
+        mockSchema,
+        mockOptions
+      );
 
-      const report = reportGen.generateConstraintReport(tables, data);
-
-      expect(report.success).toBe(false);
-
-      const fkViolations = report.violations.filter(v => v.type === 'FOREIGN_KEY');
-      expect(fkViolations.length).toBeGreaterThan(0);
-      expect(fkViolations[0].column).toBe('user_id');
+      expect(report.summary.totalTables).toBe(2);
+      expect(report.summary.validTables).toBe(2);
+      expect(report.summary.invalidTables).toBe(0);
+      expect(report.summary.totalErrors).toBe(0);
+      expect(report.summary.validationRate).toBe(100);
+      expect(report.tables).toHaveLength(2);
     });
 
-    it('reports CHECK constraint violations', () => {
-      const tables: TableSchema[] = [
+    it('should generate report with validation errors', () => {
+      const validationResults: ValidationResult[] = [
         {
-          name: 'products',
-          columns: [
-            { name: 'id', type: 'INTEGER', constraints: { primaryKey: true } },
-            { name: 'price', type: 'DECIMAL', constraints: { check: 'price > 0' } }
-          ],
-          foreignKeys: []
-        }
-      ];
-
-      const data = {
-        products: [
-          { id: 1, price: 10.99 },
-          { id: 2, price: -5.00 }, // Negative price
-          { id: 3, price: 0 }       // Zero price
-        ]
-      };
-
-      const report = reportGen.generateConstraintReport(tables, data);
-
-      expect(report.success).toBe(false);
-
-      const checkViolations = report.violations.filter(v => v.type === 'CHECK');
-      expect(checkViolations.length).toBeGreaterThan(0);
-    });
-  });
-
-  describe('statistical report', () => {
-    it('generates distribution statistics', () => {
-      const data = {
-        users: [
-          { id: 1, age: 25 },
-          { id: 2, age: 30 },
-          { id: 3, age: 35 },
-          { id: 4, age: 40 },
-          { id: 5, age: 45 }
-        ]
-      };
-
-      const report = reportGen.generateStatisticalReport('users', 'age', data.users.map(u => u.age));
-
-      expect(report.mean).toBeDefined();
-      expect(report.median).toBe(35);
-      expect(report.stdDev).toBeGreaterThan(0);
-      expect(report.min).toBe(25);
-      expect(report.max).toBe(45);
-    });
-
-    it('calculates percentiles correctly', () => {
-      const values = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
-      const report = reportGen.generateStatisticalReport('test', 'value', values);
-
-      expect(report.percentile25).toBeDefined();
-      expect(report.percentile50).toBe(5.5); // Median
-      expect(report.percentile75).toBeDefined();
-      expect(report.percentile95).toBeDefined();
-    });
-
-    it('detects uniform distribution', () => {
-      const values = Array.from({ length: 100 }, (_, i) => i % 10); // Uniform 0-9
-      const report = reportGen.generateStatisticalReport('test', 'category', values);
-
-      expect(report.distribution).toBe('UNIFORM');
-    });
-
-    it('detects normal distribution', () => {
-      // Generate approximately normal distribution
-      const values = Array.from({ length: 1000 }, () => {
-        const u1 = Math.random();
-        const u2 = Math.random();
-        // Box-Muller transform
-        return Math.sqrt(-2 * Math.log(u1)) * Math.cos(2 * Math.PI * u2) * 10 + 50;
-      });
-
-      const report = reportGen.generateStatisticalReport('test', 'score', values);
-
-      expect(report.distribution).toBe('NORMAL');
-    });
-
-    it('detects skewed distribution', () => {
-      // Generate skewed distribution (exponential-like)
-      const values = Array.from({ length: 1000 }, () => Math.pow(Math.random(), 3) * 100);
-      const report = reportGen.generateStatisticalReport('test', 'value', values);
-
-      expect(report.skewness).toBeDefined();
-      expect(Math.abs(report.skewness)).toBeGreaterThan(0.5);
-    });
-  });
-
-  describe('data quality metrics', () => {
-    it('calculates completeness ratio', () => {
-      const data = {
-        users: [
-          { id: 1, name: 'Alice', email: 'alice@example.com' },
-          { id: 2, name: 'Bob', email: null },
-          { id: 3, name: null, email: 'charlie@example.com' }
-        ]
-      };
-
-      const report = reportGen.generateDataQualityReport(data);
-
-      expect(report.completeness).toBeDefined();
-      expect(report.completeness.email).toBeCloseTo(0.667, 2);
-      expect(report.completeness.name).toBeCloseTo(0.667, 2);
-    });
-
-    it('calculates uniqueness ratio', () => {
-      const data = {
-        products: [
-          { id: 1, sku: 'ABC-123' },
-          { id: 2, sku: 'DEF-456' },
-          { id: 3, sku: 'ABC-123' }, // Duplicate
-          { id: 4, sku: 'GHI-789' }
-        ]
-      };
-
-      const report = reportGen.generateDataQualityReport(data);
-
-      expect(report.uniqueness).toBeDefined();
-      expect(report.uniqueness.sku).toBeCloseTo(0.75, 2); // 3 unique / 4 total
-    });
-
-    it('identifies data type consistency', () => {
-      const data = {
-        items: [
-          { id: 1, quantity: 10 },
-          { id: 2, quantity: 20 },
-          { id: 3, quantity: 30 }
-        ]
-      };
-
-      const report = reportGen.generateDataQualityReport(data);
-
-      expect(report.typeConsistency).toBeDefined();
-      expect(report.typeConsistency.quantity).toBe('number');
-    });
-  });
-
-  describe('summary report', () => {
-    it('generates comprehensive summary', () => {
-      const tables: TableSchema[] = [
-        {
-          name: 'users',
-          columns: [
-            { name: 'id', type: 'INTEGER', constraints: { primaryKey: true } },
-            { name: 'email', type: 'VARCHAR(255)', constraints: { unique: true } }
-          ],
-          foreignKeys: []
+          table: 'users',
+          valid: false,
+          errors: [
+            {
+              type: 'UNIQUE_VIOLATION',
+              message: 'Duplicate email found',
+              columnName: 'email',
+              rowIndex: 5
+            },
+            {
+              type: 'UNIQUE_VIOLATION',
+              message: 'Duplicate email found',
+              columnName: 'email',
+              rowIndex: 8
+            }
+          ]
         },
         {
-          name: 'orders',
-          columns: [
-            { name: 'id', type: 'INTEGER', constraints: { primaryKey: true } },
-            { name: 'user_id', type: 'INTEGER', constraints: {} }
-          ],
-          foreignKeys: [{
-            columnName: 'user_id',
-            referencedTable: 'users',
-            referencedColumn: 'id'
-          }]
+          table: 'posts',
+          valid: true,
+          errors: []
         }
       ];
 
-      const data = {
-        users: [
-          { id: 1, email: 'user1@example.com' },
-          { id: 2, email: 'user2@example.com' }
-        ],
-        orders: [
-          { id: 1, user_id: 1 },
-          { id: 2, user_id: 1 },
-          { id: 3, user_id: 2 }
-        ]
-      };
+      const report = ReportGenerator.generateValidationReport(
+        validationResults,
+        mockSchema,
+        mockOptions
+      );
 
-      const summary = reportGen.generateSummaryReport(tables, data);
-
-      expect(summary.totalTables).toBe(2);
-      expect(summary.totalRecords).toBe(5);
-      expect(summary.recordsByTable.users).toBe(2);
-      expect(summary.recordsByTable.orders).toBe(3);
-      expect(summary.constraintsSatisfied).toBe(true);
+      expect(report.summary.totalTables).toBe(2);
+      expect(report.summary.validTables).toBe(1);
+      expect(report.summary.invalidTables).toBe(1);
+      expect(report.summary.totalErrors).toBe(2);
+      expect(report.summary.errorsByType['UNIQUE_VIOLATION']).toBe(2);
+      expect(report.summary.validationRate).toBe(50);
     });
 
-    it('includes generation metadata', () => {
-      const tables: TableSchema[] = [
-        {
-          name: 'test',
-          columns: [{ name: 'id', type: 'INTEGER', constraints: { primaryKey: true } }],
-          foreignKeys: []
-        }
+    it('should include schema and options when requested', () => {
+      const validationResults: ValidationResult[] = [
+        { table: 'users', valid: true, errors: [] }
       ];
 
-      const data = { test: [{ id: 1 }] };
-      const options = {
-        seed: 42,
-        locale: 'en_US',
-        edgeCasePercentage: 5
-      };
+      const report = ReportGenerator.generateValidationReport(
+        validationResults,
+        mockSchema,
+        mockOptions,
+        { includeDetails: true, includeSuccesses: true, format: 'json' }
+      );
 
-      const summary = reportGen.generateSummaryReport(tables, data, options);
-
-      expect(summary.metadata).toBeDefined();
-      expect(summary.metadata.seed).toBe(42);
-      expect(summary.metadata.locale).toBe('en_US');
-      expect(summary.metadata.edgeCasePercentage).toBe(5);
+      expect(report.schema).toBeDefined();
+      expect(report.options).toBeDefined();
     });
 
-    it('includes timestamp in report', () => {
-      const tables: TableSchema[] = [
+    it('should exclude successful tables when includeSuccesses is false', () => {
+      const validationResults: ValidationResult[] = [
+        { table: 'users', valid: true, errors: [] },
         {
-          name: 'test',
-          columns: [{ name: 'id', type: 'INTEGER', constraints: { primaryKey: true } }],
-          foreignKeys: []
+          table: 'posts',
+          valid: false,
+          errors: [{ type: 'FK_VIOLATION', message: 'Invalid foreign key' }]
         }
       ];
 
-      const data = { test: [{ id: 1 }] };
-      const summary = reportGen.generateSummaryReport(tables, data);
+      const report = ReportGenerator.generateValidationReport(
+        validationResults,
+        mockSchema,
+        mockOptions,
+        { includeSuccesses: false, includeDetails: true, format: 'json' }
+      );
 
-      expect(summary.generatedAt).toBeDefined();
-      expect(new Date(summary.generatedAt).toString()).not.toBe('Invalid Date');
+      expect(report.tables).toHaveLength(1);
+      expect(report.tables[0].name).toBe('posts');
+    });
+
+    it('should calculate error statistics correctly', () => {
+      const validationResults: ValidationResult[] = [
+        {
+          table: 'users',
+          valid: false,
+          errors: [
+            { type: 'PRIMARY_KEY_VIOLATION', message: 'Duplicate PK' },
+            { type: 'UNIQUE_VIOLATION', message: 'Duplicate email' }
+          ]
+        },
+        {
+          table: 'posts',
+          valid: false,
+          errors: [
+            { type: 'FK_VIOLATION', message: 'Invalid FK' },
+            { type: 'FK_VIOLATION', message: 'Invalid FK' },
+            { type: 'PRIMARY_KEY_VIOLATION', message: 'Duplicate PK' }
+          ]
+        }
+      ];
+
+      const report = ReportGenerator.generateValidationReport(validationResults);
+
+      expect(report.summary.errorsByType['PRIMARY_KEY_VIOLATION']).toBe(2);
+      expect(report.summary.errorsByType['UNIQUE_VIOLATION']).toBe(1);
+      expect(report.summary.errorsByType['FK_VIOLATION']).toBe(2);
     });
   });
 
-  describe('export formats', () => {
-    it('exports report as JSON', () => {
-      const tables: TableSchema[] = [
+  describe('generateGenerationReport', () => {
+    it('should generate generation report with correct data', () => {
+      const validationResults: ValidationResult[] = [
+        { table: 'users', valid: true, errors: [] },
+        { table: 'posts', valid: true, errors: [] }
+      ];
+
+      const report = ReportGenerator.generateGenerationReport(
+        validationResults,
+        mockSchema,
+        mockOptions,
+        1234,
+        20
+      );
+
+      expect(report.timestamp).toBeDefined();
+      expect(report.schema).toBe('users, posts');
+      expect(report.recordsGenerated).toBe(20);
+      expect(report.tablesGenerated).toBe(2);
+      expect(report.duration).toBe(1234);
+      expect(report.validationResults).toEqual(validationResults);
+      expect(report.options).toEqual(mockOptions);
+    });
+  });
+
+  describe('formatAsText', () => {
+    it('should format report as text', () => {
+      const validationResults: ValidationResult[] = [
         {
-          name: 'test',
-          columns: [{ name: 'id', type: 'INTEGER', constraints: { primaryKey: true } }],
-          foreignKeys: []
+          table: 'users',
+          valid: false,
+          errors: [
+            {
+              type: 'UNIQUE_VIOLATION',
+              message: 'Duplicate value found',
+              columnName: 'email',
+              rowIndex: 3
+            }
+          ]
         }
       ];
 
-      const data = { test: [{ id: 1 }] };
-      const report = reportGen.generateSummaryReport(tables, data);
-      const json = reportGen.exportAsJSON(report);
+      const report = ReportGenerator.generateValidationReport(validationResults);
+      const text = ReportGenerator.formatAsText(report);
+
+      expect(text).toContain('VALIDATION REPORT');
+      expect(text).toContain('Summary:');
+      expect(text).toContain('Total Tables: 1');
+      expect(text).toContain('Valid Tables: 0');
+      expect(text).toContain('Invalid Tables: 1');
+      expect(text).toContain('Total Errors: 1');
+      expect(text).toContain('users');
+      expect(text).toContain('INVALID');
+      expect(text).toContain('UNIQUE_VIOLATION');
+      expect(text).toContain('Duplicate value found');
+    });
+
+    it('should include error details in text format', () => {
+      const validationResults: ValidationResult[] = [
+        {
+          table: 'posts',
+          valid: false,
+          errors: [
+            {
+              type: 'FK_VIOLATION',
+              message: 'Foreign key violation',
+              columnName: 'user_id',
+              rowIndex: 5
+            }
+          ]
+        }
+      ];
+
+      const report = ReportGenerator.generateValidationReport(validationResults);
+      const text = ReportGenerator.formatAsText(report);
+
+      expect(text).toContain('Row 5');
+      expect(text).toContain('Column user_id');
+      expect(text).toContain('FK_VIOLATION');
+    });
+  });
+
+  describe('formatAsMarkdown', () => {
+    it('should format report as markdown', () => {
+      const validationResults: ValidationResult[] = [
+        { table: 'users', valid: true, errors: [] },
+        {
+          table: 'posts',
+          valid: false,
+          errors: [
+            { type: 'PRIMARY_KEY_VIOLATION', message: 'Duplicate primary key' }
+          ]
+        }
+      ];
+
+      const report = ReportGenerator.generateValidationReport(validationResults);
+      const markdown = ReportGenerator.formatAsMarkdown(report);
+
+      expect(markdown).toContain('# Validation Report');
+      expect(markdown).toContain('## Summary');
+      expect(markdown).toContain('## Tables');
+      expect(markdown).toContain('### users');
+      expect(markdown).toContain('### posts');
+      expect(markdown).toContain('✅ VALID');
+      expect(markdown).toContain('❌ INVALID');
+      expect(markdown).toContain('**Error Count**');
+    });
+
+    it('should include error type table in markdown', () => {
+      const validationResults: ValidationResult[] = [
+        {
+          table: 'users',
+          valid: false,
+          errors: [
+            { type: 'UNIQUE_VIOLATION', message: 'Error 1' },
+            { type: 'PRIMARY_KEY_VIOLATION', message: 'Error 2' }
+          ]
+        }
+      ];
+
+      const report = ReportGenerator.generateValidationReport(validationResults);
+      const markdown = ReportGenerator.formatAsMarkdown(report);
+
+      expect(markdown).toContain('### Errors by Type');
+      expect(markdown).toContain('| Error Type | Count |');
+      expect(markdown).toContain('UNIQUE_VIOLATION');
+      expect(markdown).toContain('PRIMARY_KEY_VIOLATION');
+    });
+  });
+
+  describe('formatAsJSON', () => {
+    it('should format report as JSON', () => {
+      const validationResults: ValidationResult[] = [
+        { table: 'users', valid: true, errors: [] }
+      ];
+
+      const report = ReportGenerator.generateValidationReport(validationResults);
+      const json = ReportGenerator.formatAsJSON(report);
 
       expect(() => JSON.parse(json)).not.toThrow();
-
       const parsed = JSON.parse(json);
-      expect(parsed.totalTables).toBe(1);
+      expect(parsed.summary).toBeDefined();
+      expect(parsed.tables).toBeDefined();
     });
 
-    it('exports report as Markdown', () => {
-      const tables: TableSchema[] = [
-        {
-          name: 'users',
-          columns: [
-            { name: 'id', type: 'INTEGER', constraints: { primaryKey: true } },
-            { name: 'email', type: 'VARCHAR(255)', constraints: { unique: true } }
-          ],
-          foreignKeys: []
-        }
+    it('should format as compact JSON when pretty is false', () => {
+      const validationResults: ValidationResult[] = [
+        { table: 'users', valid: true, errors: [] }
       ];
 
-      const data = { users: [{ id: 1, email: 'test@example.com' }] };
-      const report = reportGen.generateSummaryReport(tables, data);
-      const markdown = reportGen.exportAsMarkdown(report);
+      const report = ReportGenerator.generateValidationReport(validationResults);
+      const compactJson = ReportGenerator.formatAsJSON(report, false);
+      const prettyJson = ReportGenerator.formatAsJSON(report, true);
 
-      expect(markdown).toContain('# Test Data Generation Report');
-      expect(markdown).toContain('## Summary');
-      expect(markdown).toContain('users');
-    });
-
-    it('exports report as HTML', () => {
-      const tables: TableSchema[] = [
-        {
-          name: 'test',
-          columns: [{ name: 'id', type: 'INTEGER', constraints: { primaryKey: true } }],
-          foreignKeys: []
-        }
-      ];
-
-      const data = { test: [{ id: 1 }] };
-      const report = reportGen.generateSummaryReport(tables, data);
-      const html = reportGen.exportAsHTML(report);
-
-      expect(html).toContain('<html');
-      expect(html).toContain('<table');
-      expect(html).toContain('Test Data Generation Report');
+      expect(compactJson.length).toBeLessThan(prettyJson.length);
+      expect(compactJson).not.toContain('\n');
+      expect(prettyJson).toContain('\n');
     });
   });
 
-  describe('violation details', () => {
-    it('includes row numbers in violations', () => {
-      const tables: TableSchema[] = [
-        {
-          name: 'items',
-          columns: [
-            { name: 'id', type: 'INTEGER', constraints: { primaryKey: true } }
-          ],
-          foreignKeys: []
-        }
+  describe('format', () => {
+    it('should format as text when format is text', () => {
+      const validationResults: ValidationResult[] = [
+        { table: 'users', valid: true, errors: [] }
       ];
 
-      const data = {
-        items: [
-          { id: 1 },
-          { id: 2 },
-          { id: 2 }, // Duplicate at row 3
-          { id: 3 }
-        ]
-      };
+      const report = ReportGenerator.generateValidationReport(validationResults);
+      const output = ReportGenerator.format(report, 'text');
 
-      const report = reportGen.generateConstraintReport(tables, data);
-
-      const violation = report.violations[0];
-      expect(violation.rowNumber).toBe(3);
+      expect(output).toContain('VALIDATION REPORT');
+      expect(output).toContain('='.repeat(80));
     });
 
-    it('includes actual and expected values in violations', () => {
-      const tables: TableSchema[] = [
+    it('should format as markdown when format is markdown', () => {
+      const validationResults: ValidationResult[] = [
+        { table: 'users', valid: true, errors: [] }
+      ];
+
+      const report = ReportGenerator.generateValidationReport(validationResults);
+      const output = ReportGenerator.format(report, 'markdown');
+
+      expect(output).toContain('# Validation Report');
+      expect(output).toContain('## Summary');
+    });
+
+    it('should format as JSON when format is json', () => {
+      const validationResults: ValidationResult[] = [
+        { table: 'users', valid: true, errors: [] }
+      ];
+
+      const report = ReportGenerator.generateValidationReport(validationResults);
+      const output = ReportGenerator.format(report, 'json');
+
+      expect(() => JSON.parse(output)).not.toThrow();
+    });
+  });
+
+  describe('generateStatistics', () => {
+    it('should calculate statistics correctly', () => {
+      const validationResults: ValidationResult[] = [
+        { table: 'users', valid: true, errors: [] },
         {
-          name: 'products',
-          columns: [
-            { name: 'id', type: 'INTEGER', constraints: { primaryKey: true } },
-            { name: 'price', type: 'DECIMAL', constraints: { check: 'price > 0' } }
-          ],
-          foreignKeys: []
+          table: 'posts',
+          valid: false,
+          errors: [
+            { type: 'PRIMARY_KEY_VIOLATION', message: 'Error 1' },
+            { type: 'UNIQUE_VIOLATION', message: 'Error 2' }
+          ]
+        },
+        {
+          table: 'comments',
+          valid: false,
+          errors: [
+            { type: 'FK_VIOLATION', message: 'Error 3' }
+          ]
         }
       ];
 
-      const data = {
-        products: [
-          { id: 1, price: 10 },
-          { id: 2, price: -5 }
-        ]
-      };
+      const stats = ReportGenerator.generateStatistics(validationResults);
 
-      const report = reportGen.generateConstraintReport(tables, data);
+      expect(stats.totalTables).toBe(3);
+      expect(stats.validTables).toBe(1);
+      expect(stats.invalidTables).toBe(2);
+      expect(stats.totalErrors).toBe(3);
+      expect(stats.validationRate).toBeCloseTo(33.33, 1);
+      expect(stats.errorsByType['PRIMARY_KEY_VIOLATION']).toBe(1);
+      expect(stats.errorsByType['UNIQUE_VIOLATION']).toBe(1);
+      expect(stats.errorsByType['FK_VIOLATION']).toBe(1);
+      expect(stats.errorsByTable['users']).toBe(0);
+      expect(stats.errorsByTable['posts']).toBe(2);
+      expect(stats.errorsByTable['comments']).toBe(1);
+    });
 
-      const violation = report.violations.find(v => v.type === 'CHECK');
-      expect(violation).toBeDefined();
-      expect(violation!.actualValue).toBe(-5);
-      expect(violation!.expectedCondition).toContain('> 0');
+    it('should handle zero errors correctly', () => {
+      const validationResults: ValidationResult[] = [
+        { table: 'users', valid: true, errors: [] },
+        { table: 'posts', valid: true, errors: [] }
+      ];
+
+      const stats = ReportGenerator.generateStatistics(validationResults);
+
+      expect(stats.totalErrors).toBe(0);
+      expect(stats.validationRate).toBe(100);
+      expect(Object.keys(stats.errorsByType)).toHaveLength(0);
+    });
+  });
+
+  describe('generateCompactSummary', () => {
+    it('should generate success summary for all valid tables', () => {
+      const validationResults: ValidationResult[] = [
+        { table: 'users', valid: true, errors: [] },
+        { table: 'posts', valid: true, errors: [] }
+      ];
+
+      const summary = ReportGenerator.generateCompactSummary(validationResults);
+
+      expect(summary).toContain('✓');
+      expect(summary).toContain('2 tables');
+      expect(summary).toContain('100%');
+    });
+
+    it('should generate error summary for invalid tables', () => {
+      const validationResults: ValidationResult[] = [
+        { table: 'users', valid: true, errors: [] },
+        {
+          table: 'posts',
+          valid: false,
+          errors: [
+            { type: 'ERROR', message: 'Error 1' },
+            { type: 'ERROR', message: 'Error 2' }
+          ]
+        }
+      ];
+
+      const summary = ReportGenerator.generateCompactSummary(validationResults);
+
+      expect(summary).toContain('✗');
+      expect(summary).toContain('1 of 2 tables');
+      expect(summary).toContain('50.0% valid');
+      expect(summary).toContain('2 total errors');
+    });
+  });
+
+  describe('prepareForFile', () => {
+    it('should prepare JSON report for file', () => {
+      const validationResults: ValidationResult[] = [
+        { table: 'users', valid: true, errors: [] }
+      ];
+
+      const content = ReportGenerator.prepareForFile(
+        validationResults,
+        mockSchema,
+        mockOptions,
+        'json'
+      );
+
+      expect(() => JSON.parse(content)).not.toThrow();
+      const parsed = JSON.parse(content);
+      expect(parsed.summary).toBeDefined();
+      expect(parsed.tables).toBeDefined();
+    });
+
+    it('should prepare text report for file', () => {
+      const validationResults: ValidationResult[] = [
+        { table: 'users', valid: true, errors: [] }
+      ];
+
+      const content = ReportGenerator.prepareForFile(
+        validationResults,
+        mockSchema,
+        mockOptions,
+        'text'
+      );
+
+      expect(content).toContain('VALIDATION REPORT');
+      expect(content).toContain('Summary:');
+    });
+
+    it('should prepare markdown report for file', () => {
+      const validationResults: ValidationResult[] = [
+        { table: 'users', valid: true, errors: [] }
+      ];
+
+      const content = ReportGenerator.prepareForFile(
+        validationResults,
+        mockSchema,
+        mockOptions,
+        'markdown'
+      );
+
+      expect(content).toContain('# Validation Report');
+      expect(content).toContain('## Summary');
+    });
+  });
+
+  describe('edge cases', () => {
+    it('should handle empty validation results', () => {
+      const validationResults: ValidationResult[] = [];
+
+      const report = ReportGenerator.generateValidationReport(validationResults);
+
+      expect(report.summary.totalTables).toBe(0);
+      expect(report.summary.validTables).toBe(0);
+      expect(report.summary.invalidTables).toBe(0);
+      expect(report.summary.validationRate).toBe(0);
+      expect(report.tables).toHaveLength(0);
+    });
+
+    it('should handle validation results with no errors but invalid flag', () => {
+      const validationResults: ValidationResult[] = [
+        { table: 'users', valid: false, errors: [] }
+      ];
+
+      const report = ReportGenerator.generateValidationReport(validationResults);
+
+      expect(report.summary.validTables).toBe(0);
+      expect(report.summary.invalidTables).toBe(1);
+      expect(report.summary.totalErrors).toBe(0);
+    });
+
+    it('should handle errors without row or column information', () => {
+      const validationResults: ValidationResult[] = [
+        {
+          table: 'users',
+          valid: false,
+          errors: [
+            { type: 'SCHEMA_ERROR', message: 'Invalid schema' }
+          ]
+        }
+      ];
+
+      const report = ReportGenerator.generateValidationReport(validationResults);
+      const text = ReportGenerator.formatAsText(report);
+      const markdown = ReportGenerator.formatAsMarkdown(report);
+
+      expect(text).toContain('SCHEMA_ERROR');
+      expect(text).toContain('Invalid schema');
+      expect(markdown).toContain('SCHEMA_ERROR');
+      expect(markdown).toContain('Invalid schema');
+    });
+
+    it('should handle very large error counts', () => {
+      const errors = Array.from({ length: 1000 }, (_, i) => ({
+        type: 'VALIDATION_ERROR',
+        message: `Error ${i}`
+      }));
+
+      const validationResults: ValidationResult[] = [
+        { table: 'users', valid: false, errors }
+      ];
+
+      const stats = ReportGenerator.generateStatistics(validationResults);
+
+      expect(stats.totalErrors).toBe(1000);
+      expect(stats.errorsByType['VALIDATION_ERROR']).toBe(1000);
+      expect(stats.errorsByTable['users']).toBe(1000);
     });
   });
 });

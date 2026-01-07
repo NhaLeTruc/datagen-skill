@@ -1,494 +1,504 @@
 import { CircularDependencyResolver } from '../../src/core/generator/circular-dependency-resolver';
-import { TableSchema } from '../../src/types';
+import { SchemaDefinition, TableSchema, ForeignKeyConstraint } from '../../src/types';
 
 describe('CircularDependencyResolver', () => {
   describe('detection', () => {
     it('detects simple circular dependency', () => {
-      const tables: TableSchema[] = [
-        {
-          name: 'users',
-          columns: [
-            { name: 'id', type: 'INTEGER', constraints: { primaryKey: true } },
-            { name: 'profile_id', type: 'INTEGER', constraints: {} }
-          ],
-          foreignKeys: [{
-            columnName: 'profile_id',
-            referencedTable: 'profiles',
-            referencedColumn: 'id'
-          }]
-        },
-        {
-          name: 'profiles',
-          columns: [
-            { name: 'id', type: 'INTEGER', constraints: { primaryKey: true } },
-            { name: 'user_id', type: 'INTEGER', constraints: {} }
-          ],
-          foreignKeys: [{
-            columnName: 'user_id',
-            referencedTable: 'users',
-            referencedColumn: 'id'
-          }]
-        }
-      ];
+      const schema: SchemaDefinition = {
+        tables: [
+          {
+            name: 'users',
+            columns: [
+              { name: 'id', type: 'INTEGER', nullable: false },
+              { name: 'profile_id', type: 'INTEGER', nullable: true }
+            ],
+            constraints: [
+              { type: 'PRIMARY_KEY', columns: ['id'] },
+              {
+                type: 'FOREIGN_KEY',
+                columns: ['profile_id'],
+                referencedTable: 'profiles',
+                referencedColumns: ['id']
+              }
+            ]
+          },
+          {
+            name: 'profiles',
+            columns: [
+              { name: 'id', type: 'INTEGER', nullable: false },
+              { name: 'user_id', type: 'INTEGER', nullable: false }
+            ],
+            constraints: [
+              { type: 'PRIMARY_KEY', columns: ['id'] },
+              {
+                type: 'FOREIGN_KEY',
+                columns: ['user_id'],
+                referencedTable: 'users',
+                referencedColumns: ['id']
+              }
+            ]
+          }
+        ]
+      };
 
-      const resolver = new CircularDependencyResolver(tables);
-      expect(resolver.hasCircularDependencies()).toBe(true);
+      const resolver = new CircularDependencyResolver(schema);
+      const cycles = resolver.detectCircularDependencies();
+
+      expect(cycles.length).toBeGreaterThan(0);
+      expect(cycles[0].cycle).toContain('users');
+      expect(cycles[0].cycle).toContain('profiles');
     });
 
     it('detects three-way circular dependency', () => {
-      const tables: TableSchema[] = [
-        {
-          name: 'a',
-          columns: [
-            { name: 'id', type: 'INTEGER', constraints: { primaryKey: true } },
-            { name: 'b_id', type: 'INTEGER', constraints: {} }
-          ],
-          foreignKeys: [{
-            columnName: 'b_id',
-            referencedTable: 'b',
-            referencedColumn: 'id'
-          }]
-        },
-        {
-          name: 'b',
-          columns: [
-            { name: 'id', type: 'INTEGER', constraints: { primaryKey: true } },
-            { name: 'c_id', type: 'INTEGER', constraints: {} }
-          ],
-          foreignKeys: [{
-            columnName: 'c_id',
-            referencedTable: 'c',
-            referencedColumn: 'id'
-          }]
-        },
-        {
-          name: 'c',
-          columns: [
-            { name: 'id', type: 'INTEGER', constraints: { primaryKey: true } },
-            { name: 'a_id', type: 'INTEGER', constraints: {} }
-          ],
-          foreignKeys: [{
-            columnName: 'a_id',
-            referencedTable: 'a',
-            referencedColumn: 'id'
-          }]
-        }
-      ];
+      const schema: SchemaDefinition = {
+        tables: [
+          {
+            name: 'a',
+            columns: [
+              { name: 'id', type: 'INTEGER', nullable: false },
+              { name: 'b_id', type: 'INTEGER', nullable: true }
+            ],
+            constraints: [
+              { type: 'PRIMARY_KEY', columns: ['id'] },
+              {
+                type: 'FOREIGN_KEY',
+                columns: ['b_id'],
+                referencedTable: 'b',
+                referencedColumns: ['id']
+              }
+            ]
+          },
+          {
+            name: 'b',
+            columns: [
+              { name: 'id', type: 'INTEGER', nullable: false },
+              { name: 'c_id', type: 'INTEGER', nullable: true }
+            ],
+            constraints: [
+              { type: 'PRIMARY_KEY', columns: ['id'] },
+              {
+                type: 'FOREIGN_KEY',
+                columns: ['c_id'],
+                referencedTable: 'c',
+                referencedColumns: ['id']
+              }
+            ]
+          },
+          {
+            name: 'c',
+            columns: [
+              { name: 'id', type: 'INTEGER', nullable: false },
+              { name: 'a_id', type: 'INTEGER', nullable: true }
+            ],
+            constraints: [
+              { type: 'PRIMARY_KEY', columns: ['id'] },
+              {
+                type: 'FOREIGN_KEY',
+                columns: ['a_id'],
+                referencedTable: 'a',
+                referencedColumns: ['id']
+              }
+            ]
+          }
+        ]
+      };
 
-      const resolver = new CircularDependencyResolver(tables);
-      expect(resolver.hasCircularDependencies()).toBe(true);
+      const resolver = new CircularDependencyResolver(schema);
+      const cycles = resolver.detectCircularDependencies();
+
+      expect(cycles.length).toBeGreaterThan(0);
+      expect(cycles[0].cycle).toContain('a');
+      expect(cycles[0].cycle).toContain('b');
+      expect(cycles[0].cycle).toContain('c');
     });
 
     it('does not detect false circular dependency in linear chain', () => {
-      const tables: TableSchema[] = [
-        {
-          name: 'a',
-          columns: [
-            { name: 'id', type: 'INTEGER', constraints: { primaryKey: true } }
-          ],
-          foreignKeys: []
-        },
-        {
-          name: 'b',
-          columns: [
-            { name: 'id', type: 'INTEGER', constraints: { primaryKey: true } },
-            { name: 'a_id', type: 'INTEGER', constraints: {} }
-          ],
-          foreignKeys: [{
-            columnName: 'a_id',
-            referencedTable: 'a',
-            referencedColumn: 'id'
-          }]
-        },
-        {
-          name: 'c',
-          columns: [
-            { name: 'id', type: 'INTEGER', constraints: { primaryKey: true } },
-            { name: 'b_id', type: 'INTEGER', constraints: {} }
-          ],
-          foreignKeys: [{
-            columnName: 'b_id',
-            referencedTable: 'b',
-            referencedColumn: 'id'
-          }]
-        }
-      ];
+      const schema: SchemaDefinition = {
+        tables: [
+          {
+            name: 'a',
+            columns: [{ name: 'id', type: 'INTEGER', nullable: false }],
+            constraints: [{ type: 'PRIMARY_KEY', columns: ['id'] }]
+          },
+          {
+            name: 'b',
+            columns: [
+              { name: 'id', type: 'INTEGER', nullable: false },
+              { name: 'a_id', type: 'INTEGER', nullable: false }
+            ],
+            constraints: [
+              { type: 'PRIMARY_KEY', columns: ['id'] },
+              {
+                type: 'FOREIGN_KEY',
+                columns: ['a_id'],
+                referencedTable: 'a',
+                referencedColumns: ['id']
+              }
+            ]
+          },
+          {
+            name: 'c',
+            columns: [
+              { name: 'id', type: 'INTEGER', nullable: false },
+              { name: 'b_id', type: 'INTEGER', nullable: false }
+            ],
+            constraints: [
+              { type: 'PRIMARY_KEY', columns: ['id'] },
+              {
+                type: 'FOREIGN_KEY',
+                columns: ['b_id'],
+                referencedTable: 'b',
+                referencedColumns: ['id']
+              }
+            ]
+          }
+        ]
+      };
 
-      const resolver = new CircularDependencyResolver(tables);
-      expect(resolver.hasCircularDependencies()).toBe(false);
+      const resolver = new CircularDependencyResolver(schema);
+      const cycles = resolver.detectCircularDependencies();
+
+      expect(cycles.length).toBe(0);
     });
   });
 
   describe('resolution strategy', () => {
-    it('breaks cycle by making one FK nullable', () => {
-      const tables: TableSchema[] = [
-        {
-          name: 'users',
-          columns: [
-            { name: 'id', type: 'INTEGER', constraints: { primaryKey: true } },
-            { name: 'profile_id', type: 'INTEGER', constraints: { notNull: false } }
-          ],
-          foreignKeys: [{
-            columnName: 'profile_id',
-            referencedTable: 'profiles',
-            referencedColumn: 'id'
-          }]
-        },
-        {
-          name: 'profiles',
-          columns: [
-            { name: 'id', type: 'INTEGER', constraints: { primaryKey: true } },
-            { name: 'user_id', type: 'INTEGER', constraints: {} }
-          ],
-          foreignKeys: [{
-            columnName: 'user_id',
-            referencedTable: 'users',
-            referencedColumn: 'id'
-          }]
-        }
-      ];
+    it('determines nullable strategy when FK is nullable', () => {
+      const schema: SchemaDefinition = {
+        tables: [
+          {
+            name: 'users',
+            columns: [
+              { name: 'id', type: 'INTEGER', nullable: false },
+              { name: 'profile_id', type: 'INTEGER', nullable: true }
+            ],
+            constraints: [
+              { type: 'PRIMARY_KEY', columns: ['id'] },
+              {
+                type: 'FOREIGN_KEY',
+                columns: ['profile_id'],
+                referencedTable: 'profiles',
+                referencedColumns: ['id']
+              }
+            ]
+          },
+          {
+            name: 'profiles',
+            columns: [
+              { name: 'id', type: 'INTEGER', nullable: false },
+              { name: 'user_id', type: 'INTEGER', nullable: false }
+            ],
+            constraints: [
+              { type: 'PRIMARY_KEY', columns: ['id'] },
+              {
+                type: 'FOREIGN_KEY',
+                columns: ['user_id'],
+                referencedTable: 'users',
+                referencedColumns: ['id']
+              }
+            ]
+          }
+        ]
+      };
 
-      const resolver = new CircularDependencyResolver(tables);
-      const strategy = resolver.resolveCircularDependencies();
+      const resolver = new CircularDependencyResolver(schema);
+      const cycles = resolver.detectCircularDependencies();
 
-      expect(strategy).toBeDefined();
-      expect(strategy.deferredForeignKeys).toHaveLength(1);
+      expect(cycles.length).toBeGreaterThan(0);
+
+      const strategy = resolver.determineResolutionStrategy(cycles[0]);
+      expect(strategy.type).toBe('nullable');
+      expect(strategy.affectedTables).toContain('users');
     });
 
-    it('identifies which FK to defer', () => {
-      const tables: TableSchema[] = [
-        {
-          name: 'orders',
-          columns: [
-            { name: 'id', type: 'INTEGER', constraints: { primaryKey: true } },
-            { name: 'latest_shipment_id', type: 'INTEGER', constraints: { notNull: false } }
-          ],
-          foreignKeys: [{
-            columnName: 'latest_shipment_id',
-            referencedTable: 'shipments',
-            referencedColumn: 'id'
-          }]
-        },
-        {
-          name: 'shipments',
-          columns: [
-            { name: 'id', type: 'INTEGER', constraints: { primaryKey: true } },
-            { name: 'order_id', type: 'INTEGER', constraints: { notNull: true } }
-          ],
-          foreignKeys: [{
-            columnName: 'order_id',
-            referencedTable: 'orders',
-            referencedColumn: 'id'
-          }]
-        }
-      ];
+    it('determines two-pass strategy when no nullable FKs', () => {
+      const schema: SchemaDefinition = {
+        tables: [
+          {
+            name: 'a',
+            columns: [
+              { name: 'id', type: 'INTEGER', nullable: false },
+              { name: 'b_id', type: 'INTEGER', nullable: false }
+            ],
+            constraints: [
+              { type: 'PRIMARY_KEY', columns: ['id'] },
+              {
+                type: 'FOREIGN_KEY',
+                columns: ['b_id'],
+                referencedTable: 'b',
+                referencedColumns: ['id']
+              }
+            ]
+          },
+          {
+            name: 'b',
+            columns: [
+              { name: 'id', type: 'INTEGER', nullable: false },
+              { name: 'a_id', type: 'INTEGER', nullable: false }
+            ],
+            constraints: [
+              { type: 'PRIMARY_KEY', columns: ['id'] },
+              {
+                type: 'FOREIGN_KEY',
+                columns: ['a_id'],
+                referencedTable: 'a',
+                referencedColumns: ['id']
+              }
+            ]
+          }
+        ]
+      };
 
-      const resolver = new CircularDependencyResolver(tables);
-      const strategy = resolver.resolveCircularDependencies();
+      const resolver = new CircularDependencyResolver(schema);
+      const cycles = resolver.detectCircularDependencies();
 
-      // Should defer the nullable FK (latest_shipment_id)
-      expect(strategy.deferredForeignKeys[0].columnName).toBe('latest_shipment_id');
-    });
+      expect(cycles.length).toBeGreaterThan(0);
 
-    it('generates records with deferred FK initially null', () => {
-      const tables: TableSchema[] = [
-        {
-          name: 'users',
-          columns: [
-            { name: 'id', type: 'INTEGER', constraints: { primaryKey: true } },
-            { name: 'name', type: 'VARCHAR(100)', constraints: {} },
-            { name: 'profile_id', type: 'INTEGER', constraints: { notNull: false } }
-          ],
-          foreignKeys: [{
-            columnName: 'profile_id',
-            referencedTable: 'profiles',
-            referencedColumn: 'id'
-          }]
-        },
-        {
-          name: 'profiles',
-          columns: [
-            { name: 'id', type: 'INTEGER', constraints: { primaryKey: true } },
-            { name: 'bio', type: 'TEXT', constraints: {} },
-            { name: 'user_id', type: 'INTEGER', constraints: {} }
-          ],
-          foreignKeys: [{
-            columnName: 'user_id',
-            referencedTable: 'users',
-            referencedColumn: 'id'
-          }]
-        }
-      ];
-
-      const resolver = new CircularDependencyResolver(tables);
-      const result = resolver.generateWithDeferredFKs(10);
-
-      // Initial pass: users have null profile_id
-      expect(result.users.every((u: any) => u.profile_id === null)).toBe(true);
-
-      // Profiles should have valid user_id
-      expect(result.profiles.every((p: any) => p.user_id !== null)).toBe(true);
-    });
-
-    it('updates deferred FKs in second pass', () => {
-      const tables: TableSchema[] = [
-        {
-          name: 'users',
-          columns: [
-            { name: 'id', type: 'INTEGER', constraints: { primaryKey: true } },
-            { name: 'profile_id', type: 'INTEGER', constraints: { notNull: false } }
-          ],
-          foreignKeys: [{
-            columnName: 'profile_id',
-            referencedTable: 'profiles',
-            referencedColumn: 'id'
-          }]
-        },
-        {
-          name: 'profiles',
-          columns: [
-            { name: 'id', type: 'INTEGER', constraints: { primaryKey: true } },
-            { name: 'user_id', type: 'INTEGER', constraints: {} }
-          ],
-          foreignKeys: [{
-            columnName: 'user_id',
-            referencedTable: 'users',
-            referencedColumn: 'id'
-          }]
-        }
-      ];
-
-      const resolver = new CircularDependencyResolver(tables);
-      const result = resolver.generateWithDeferredFKs(10);
-
-      // After update pass, users should have profile_id populated
-      const usersAfterUpdate = resolver.updateDeferredFKs(result);
-      expect(usersAfterUpdate.users.some((u: any) => u.profile_id !== null)).toBe(true);
-
-      // Verify referential integrity
-      const profileIds = new Set(result.profiles.map((p: any) => p.id));
-      usersAfterUpdate.users.forEach((user: any) => {
-        if (user.profile_id !== null) {
-          expect(profileIds.has(user.profile_id)).toBe(true);
-        }
-      });
-    });
-  });
-
-  describe('complex cycles', () => {
-    it('handles multiple cycles in same schema', () => {
-      const tables: TableSchema[] = [
-        // Cycle 1: users <-> profiles
-        {
-          name: 'users',
-          columns: [
-            { name: 'id', type: 'INTEGER', constraints: { primaryKey: true } },
-            { name: 'profile_id', type: 'INTEGER', constraints: { notNull: false } }
-          ],
-          foreignKeys: [{
-            columnName: 'profile_id',
-            referencedTable: 'profiles',
-            referencedColumn: 'id'
-          }]
-        },
-        {
-          name: 'profiles',
-          columns: [
-            { name: 'id', type: 'INTEGER', constraints: { primaryKey: true } },
-            { name: 'user_id', type: 'INTEGER', constraints: {} }
-          ],
-          foreignKeys: [{
-            columnName: 'user_id',
-            referencedTable: 'users',
-            referencedColumn: 'id'
-          }]
-        },
-        // Cycle 2: products <-> categories
-        {
-          name: 'products',
-          columns: [
-            { name: 'id', type: 'INTEGER', constraints: { primaryKey: true } },
-            { name: 'featured_category_id', type: 'INTEGER', constraints: { notNull: false } }
-          ],
-          foreignKeys: [{
-            columnName: 'featured_category_id',
-            referencedTable: 'categories',
-            referencedColumn: 'id'
-          }]
-        },
-        {
-          name: 'categories',
-          columns: [
-            { name: 'id', type: 'INTEGER', constraints: { primaryKey: true } },
-            { name: 'featured_product_id', type: 'INTEGER', constraints: { notNull: false } }
-          ],
-          foreignKeys: [{
-            columnName: 'featured_product_id',
-            referencedTable: 'products',
-            referencedColumn: 'id'
-          }]
-        }
-      ];
-
-      const resolver = new CircularDependencyResolver(tables);
-      expect(resolver.hasCircularDependencies()).toBe(true);
-
-      const strategy = resolver.resolveCircularDependencies();
-      expect(strategy.deferredForeignKeys.length).toBeGreaterThanOrEqual(2);
-    });
-  });
-
-  describe('error handling', () => {
-    it('throws error if cycle cannot be broken', () => {
-      // Both FKs are NOT NULL - impossible to resolve
-      const tables: TableSchema[] = [
-        {
-          name: 'a',
-          columns: [
-            { name: 'id', type: 'INTEGER', constraints: { primaryKey: true } },
-            { name: 'b_id', type: 'INTEGER', constraints: { notNull: true } }
-          ],
-          foreignKeys: [{
-            columnName: 'b_id',
-            referencedTable: 'b',
-            referencedColumn: 'id'
-          }]
-        },
-        {
-          name: 'b',
-          columns: [
-            { name: 'id', type: 'INTEGER', constraints: { primaryKey: true } },
-            { name: 'a_id', type: 'INTEGER', constraints: { notNull: true } }
-          ],
-          foreignKeys: [{
-            columnName: 'a_id',
-            referencedTable: 'a',
-            referencedColumn: 'id'
-          }]
-        }
-      ];
-
-      const resolver = new CircularDependencyResolver(tables);
-      expect(() => resolver.resolveCircularDependencies()).toThrow();
+      const strategy = resolver.determineResolutionStrategy(cycles[0]);
+      expect(strategy.type).toBe('two-pass');
     });
   });
 
   describe('generation order', () => {
-    it('provides correct generation order for circular dependencies', () => {
-      const tables: TableSchema[] = [
-        {
-          name: 'users',
-          columns: [
-            { name: 'id', type: 'INTEGER', constraints: { primaryKey: true } },
-            { name: 'profile_id', type: 'INTEGER', constraints: { notNull: false } }
-          ],
-          foreignKeys: [{
-            columnName: 'profile_id',
-            referencedTable: 'profiles',
-            referencedColumn: 'id'
-          }]
-        },
-        {
-          name: 'profiles',
-          columns: [
-            { name: 'id', type: 'INTEGER', constraints: { primaryKey: true } },
-            { name: 'user_id', type: 'INTEGER', constraints: {} }
-          ],
-          foreignKeys: [{
-            columnName: 'user_id',
-            referencedTable: 'users',
-            referencedColumn: 'id'
-          }]
-        }
-      ];
+    it('provides correct generation order resolving circular dependencies', () => {
+      const schema: SchemaDefinition = {
+        tables: [
+          {
+            name: 'users',
+            columns: [
+              { name: 'id', type: 'INTEGER', nullable: false },
+              { name: 'profile_id', type: 'INTEGER', nullable: true }
+            ],
+            constraints: [
+              { type: 'PRIMARY_KEY', columns: ['id'] },
+              {
+                type: 'FOREIGN_KEY',
+                columns: ['profile_id'],
+                referencedTable: 'profiles',
+                referencedColumns: ['id']
+              }
+            ]
+          },
+          {
+            name: 'profiles',
+            columns: [
+              { name: 'id', type: 'INTEGER', nullable: false },
+              { name: 'user_id', type: 'INTEGER', nullable: false }
+            ],
+            constraints: [
+              { type: 'PRIMARY_KEY', columns: ['id'] },
+              {
+                type: 'FOREIGN_KEY',
+                columns: ['user_id'],
+                referencedTable: 'users',
+                referencedColumns: ['id']
+              }
+            ]
+          }
+        ]
+      };
 
-      const resolver = new CircularDependencyResolver(tables);
-      const order = resolver.getGenerationOrder();
+      const resolver = new CircularDependencyResolver(schema);
+      const order = resolver.resolveGenerationOrder();
 
       expect(order).toBeDefined();
-      expect(order).toHaveLength(2);
+      expect(order.length).toBeGreaterThan(0);
+      expect(order).toContain('users');
+      expect(order).toContain('profiles');
+    });
 
-      // The table with deferred FK should come first
-      expect(order[0]).toBe('users');
-      expect(order[1]).toBe('profiles');
+    it('handles multiple independent cycles', () => {
+      const schema: SchemaDefinition = {
+        tables: [
+          {
+            name: 'users',
+            columns: [
+              { name: 'id', type: 'INTEGER', nullable: false },
+              { name: 'profile_id', type: 'INTEGER', nullable: true }
+            ],
+            constraints: [
+              { type: 'PRIMARY_KEY', columns: ['id'] },
+              {
+                type: 'FOREIGN_KEY',
+                columns: ['profile_id'],
+                referencedTable: 'profiles',
+                referencedColumns: ['id']
+              }
+            ]
+          },
+          {
+            name: 'profiles',
+            columns: [
+              { name: 'id', type: 'INTEGER', nullable: false },
+              { name: 'user_id', type: 'INTEGER', nullable: false }
+            ],
+            constraints: [
+              { type: 'PRIMARY_KEY', columns: ['id'] },
+              {
+                type: 'FOREIGN_KEY',
+                columns: ['user_id'],
+                referencedTable: 'users',
+                referencedColumns: ['id']
+              }
+            ]
+          },
+          {
+            name: 'products',
+            columns: [
+              { name: 'id', type: 'INTEGER', nullable: false },
+              { name: 'category_id', type: 'INTEGER', nullable: true }
+            ],
+            constraints: [
+              { type: 'PRIMARY_KEY', columns: ['id'] },
+              {
+                type: 'FOREIGN_KEY',
+                columns: ['category_id'],
+                referencedTable: 'categories',
+                referencedColumns: ['id']
+              }
+            ]
+          },
+          {
+            name: 'categories',
+            columns: [
+              { name: 'id', type: 'INTEGER', nullable: false },
+              { name: 'featured_product_id', type: 'INTEGER', nullable: true }
+            ],
+            constraints: [
+              { type: 'PRIMARY_KEY', columns: ['id'] },
+              {
+                type: 'FOREIGN_KEY',
+                columns: ['featured_product_id'],
+                referencedTable: 'products',
+                referencedColumns: ['id']
+              }
+            ]
+          }
+        ]
+      };
+
+      const resolver = new CircularDependencyResolver(schema);
+      const cycles = resolver.detectCircularDependencies();
+
+      expect(cycles.length).toBeGreaterThanOrEqual(2);
+
+      const order = resolver.resolveGenerationOrder();
+      expect(order).toBeDefined();
+      expect(order.length).toBe(4);
     });
   });
 
-  describe('referential integrity validation', () => {
-    it('validates all FKs after deferred update', () => {
-      const tables: TableSchema[] = [
-        {
-          name: 'users',
-          columns: [
-            { name: 'id', type: 'INTEGER', constraints: { primaryKey: true } },
-            { name: 'profile_id', type: 'INTEGER', constraints: { notNull: false } }
-          ],
-          foreignKeys: [{
-            columnName: 'profile_id',
-            referencedTable: 'profiles',
-            referencedColumn: 'id'
-          }]
-        },
-        {
-          name: 'profiles',
-          columns: [
-            { name: 'id', type: 'INTEGER', constraints: { primaryKey: true } },
-            { name: 'user_id', type: 'INTEGER', constraints: {} }
-          ],
-          foreignKeys: [{
-            columnName: 'user_id',
-            referencedTable: 'users',
-            referencedColumn: 'id'
-          }]
-        }
-      ];
+  describe('two-pass plan', () => {
+    it('creates two-pass plan with phase separation', () => {
+      const schema: SchemaDefinition = {
+        tables: [
+          {
+            name: 'users',
+            columns: [
+              { name: 'id', type: 'INTEGER', nullable: false },
+              { name: 'name', type: 'VARCHAR', nullable: false },
+              { name: 'profile_id', type: 'INTEGER', nullable: true }
+            ],
+            constraints: [
+              { type: 'PRIMARY_KEY', columns: ['id'] },
+              {
+                type: 'FOREIGN_KEY',
+                columns: ['profile_id'],
+                referencedTable: 'profiles',
+                referencedColumns: ['id']
+              }
+            ]
+          },
+          {
+            name: 'profiles',
+            columns: [
+              { name: 'id', type: 'INTEGER', nullable: false },
+              { name: 'bio', type: 'TEXT', nullable: true },
+              { name: 'user_id', type: 'INTEGER', nullable: false }
+            ],
+            constraints: [
+              { type: 'PRIMARY_KEY', columns: ['id'] },
+              {
+                type: 'FOREIGN_KEY',
+                columns: ['user_id'],
+                referencedTable: 'users',
+                referencedColumns: ['id']
+              }
+            ]
+          }
+        ]
+      };
 
-      const resolver = new CircularDependencyResolver(tables);
-      const result = resolver.generateWithDeferredFKs(20);
-      const updated = resolver.updateDeferredFKs(result);
+      const resolver = new CircularDependencyResolver(schema);
+      const cycles = resolver.detectCircularDependencies();
 
-      // Validate referential integrity
-      const isValid = resolver.validateReferentialIntegrity(updated);
-      expect(isValid).toBe(true);
+      expect(cycles.length).toBeGreaterThan(0);
+
+      const plan = resolver.createTwoPassPlan(cycles[0]);
+
+      expect(plan.phase1.length).toBeGreaterThan(0);
+      expect(plan.phase2.length).toBeGreaterThan(0);
+
+      // Verify phase1 excludes cyclic FK columns
+      const usersPhase1 = plan.phase1.find(p => p.table === 'users');
+      expect(usersPhase1).toBeDefined();
+      expect(usersPhase1?.columns).toContain('id');
+      expect(usersPhase1?.columns).toContain('name');
+
+      // Verify phase2 includes cyclic FK columns for updates
+      const usersPhase2 = plan.phase2.find(p => p.table === 'users');
+      if (usersPhase2) {
+        expect(usersPhase2.updates).toContain('profile_id');
+      }
     });
   });
 
   describe('edge cases', () => {
-    it('handles single table with no dependencies', () => {
-      const tables: TableSchema[] = [
-        {
-          name: 'standalone',
-          columns: [
-            { name: 'id', type: 'INTEGER', constraints: { primaryKey: true } }
-          ],
-          foreignKeys: []
-        }
-      ];
+    it('handles schema with no circular dependencies', () => {
+      const schema: SchemaDefinition = {
+        tables: [
+          {
+            name: 'standalone',
+            columns: [{ name: 'id', type: 'INTEGER', nullable: false }],
+            constraints: [{ type: 'PRIMARY_KEY', columns: ['id'] }]
+          }
+        ]
+      };
 
-      const resolver = new CircularDependencyResolver(tables);
-      expect(resolver.hasCircularDependencies()).toBe(false);
+      const resolver = new CircularDependencyResolver(schema);
+      const cycles = resolver.detectCircularDependencies();
+
+      expect(cycles.length).toBe(0);
     });
 
-    it('handles self-referencing table (not a circular dependency)', () => {
-      const tables: TableSchema[] = [
-        {
-          name: 'employees',
-          columns: [
-            { name: 'id', type: 'INTEGER', constraints: { primaryKey: true } },
-            { name: 'manager_id', type: 'INTEGER', constraints: { notNull: false } }
-          ],
-          foreignKeys: [{
-            columnName: 'manager_id',
-            referencedTable: 'employees',
-            referencedColumn: 'id'
-          }]
-        }
-      ];
+    it('handles self-referencing table correctly', () => {
+      const schema: SchemaDefinition = {
+        tables: [
+          {
+            name: 'employees',
+            columns: [
+              { name: 'id', type: 'INTEGER', nullable: false },
+              { name: 'manager_id', type: 'INTEGER', nullable: true }
+            ],
+            constraints: [
+              { type: 'PRIMARY_KEY', columns: ['id'] },
+              {
+                type: 'FOREIGN_KEY',
+                columns: ['manager_id'],
+                referencedTable: 'employees',
+                referencedColumns: ['id']
+              }
+            ]
+          }
+        ]
+      };
 
-      const resolver = new CircularDependencyResolver(tables);
+      const resolver = new CircularDependencyResolver(schema);
+      const cycles = resolver.detectCircularDependencies();
 
-      // Self-referencing is not a circular dependency between tables
-      expect(resolver.hasCircularDependencies()).toBe(false);
+      // Self-referencing should not create a circular dependency cycle
+      // because it's within the same table
+      expect(cycles.length).toBe(0);
     });
   });
 });

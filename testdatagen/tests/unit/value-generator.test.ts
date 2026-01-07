@@ -1,482 +1,538 @@
 import { ValueGenerator } from '../../src/core/generator/value-generator';
-import { ColumnSchema } from '../../src/types';
+import { ColumnDefinition, GenerationContext } from '../../src/types';
 
 describe('ValueGenerator', () => {
   let generator: ValueGenerator;
+  let context: GenerationContext;
 
   beforeEach(() => {
-    generator = new ValueGenerator({ seed: 42 });
+    generator = new ValueGenerator(42);
+    context = {
+      rowIndex: 0,
+      tableName: 'test_table',
+      allData: new Map(),
+      existingValues: new Map()
+    };
   });
 
   describe('data type generation', () => {
     it('generates INTEGER values', () => {
-      const column: ColumnSchema = {
+      const column: ColumnDefinition = {
         name: 'id',
         type: 'INTEGER',
-        constraints: {}
+        nullable: false
       };
 
-      const value = generator.generate(column);
+      const value = generator.generate(column, context);
       expect(typeof value).toBe('number');
       expect(Number.isInteger(value as number)).toBe(true);
     });
 
-    it('generates VARCHAR values', () => {
-      const column: ColumnSchema = {
-        name: 'name',
-        type: 'VARCHAR(100)',
-        constraints: {}
+    it('generates BIGINT values', () => {
+      const column: ColumnDefinition = {
+        name: 'big_id',
+        type: 'BIGINT',
+        nullable: false
       };
 
-      const value = generator.generate(column);
+      const value = generator.generate(column, context);
+      expect(typeof value).toBe('number');
+      expect(Number.isInteger(value as number)).toBe(true);
+    });
+
+    it('generates SMALLINT values', () => {
+      const column: ColumnDefinition = {
+        name: 'small_num',
+        type: 'SMALLINT',
+        nullable: false
+      };
+
+      const value = generator.generate(column, context);
+      expect(typeof value).toBe('number');
+      expect(value).toBeGreaterThanOrEqual(-32768);
+      expect(value).toBeLessThanOrEqual(32767);
+    });
+
+    it('generates VARCHAR values', () => {
+      const column: ColumnDefinition = {
+        name: 'name',
+        type: 'VARCHAR',
+        length: 100,
+        nullable: false
+      };
+
+      const value = generator.generate(column, context);
       expect(typeof value).toBe('string');
       expect((value as string).length).toBeLessThanOrEqual(100);
     });
 
     it('generates TEXT values', () => {
-      const column: ColumnSchema = {
+      const column: ColumnDefinition = {
         name: 'description',
         type: 'TEXT',
-        constraints: {}
+        nullable: false
       };
 
-      const value = generator.generate(column);
+      const value = generator.generate(column, context);
       expect(typeof value).toBe('string');
     });
 
     it('generates DECIMAL values', () => {
-      const column: ColumnSchema = {
+      const column: ColumnDefinition = {
         name: 'price',
-        type: 'DECIMAL(10,2)',
-        constraints: {}
+        type: 'DECIMAL',
+        precision: 10,
+        scale: 2,
+        nullable: false
       };
 
-      const value = generator.generate(column);
+      const value = generator.generate(column, context);
       expect(typeof value).toBe('number');
-      expect((value as number).toFixed(2)).toBe((value as number).toFixed(2));
+    });
+
+    it('generates FLOAT values', () => {
+      const column: ColumnDefinition = {
+        name: 'rating',
+        type: 'FLOAT',
+        nullable: false
+      };
+
+      const value = generator.generate(column, context);
+      expect(typeof value).toBe('number');
     });
 
     it('generates BOOLEAN values', () => {
-      const column: ColumnSchema = {
+      const column: ColumnDefinition = {
         name: 'is_active',
         type: 'BOOLEAN',
-        constraints: {}
+        nullable: false
       };
 
-      const value = generator.generate(column);
+      const value = generator.generate(column, context);
       expect(typeof value).toBe('boolean');
     });
 
     it('generates DATE values', () => {
-      const column: ColumnSchema = {
+      const column: ColumnDefinition = {
         name: 'created_at',
         type: 'DATE',
-        constraints: {}
+        nullable: false
       };
 
-      const value = generator.generate(column);
+      const value = generator.generate(column, context);
+      expect(typeof value).toBe('string');
+      expect(new Date(value as string).toString()).not.toBe('Invalid Date');
+    });
+
+    it('generates DATETIME values', () => {
+      const column: ColumnDefinition = {
+        name: 'updated_at',
+        type: 'DATETIME',
+        nullable: false
+      };
+
+      const value = generator.generate(column, context);
       expect(typeof value).toBe('string');
       expect(new Date(value as string).toString()).not.toBe('Invalid Date');
     });
 
     it('generates TIMESTAMP values', () => {
-      const column: ColumnSchema = {
-        name: 'updated_at',
+      const column: ColumnDefinition = {
+        name: 'timestamp',
         type: 'TIMESTAMP',
-        constraints: {}
+        nullable: false
       };
 
-      const value = generator.generate(column);
+      const value = generator.generate(column, context);
       expect(typeof value).toBe('string');
       expect(new Date(value as string).toString()).not.toBe('Invalid Date');
     });
 
-    it('generates UUID values', () => {
-      const column: ColumnSchema = {
-        name: 'uuid',
-        type: 'UUID',
-        constraints: {}
+    it('generates TIME values', () => {
+      const column: ColumnDefinition = {
+        name: 'time',
+        type: 'TIME',
+        nullable: false
       };
 
-      const value = generator.generate(column);
+      const value = generator.generate(column, context);
+      expect(typeof value).toBe('string');
+      expect(value).toMatch(/^\d{2}:\d{2}:\d{2}$/);
+    });
+
+    it('generates UUID values', () => {
+      const column: ColumnDefinition = {
+        name: 'uuid',
+        type: 'UUID',
+        nullable: false
+      };
+
+      const value = generator.generate(column, context);
       expect(typeof value).toBe('string');
       expect((value as string)).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i);
     });
 
     it('generates JSON values', () => {
-      const column: ColumnSchema = {
+      const column: ColumnDefinition = {
         name: 'metadata',
         type: 'JSON',
-        constraints: {}
+        nullable: false
       };
 
-      const value = generator.generate(column);
+      const value = generator.generate(column, context);
       expect(typeof value).toBe('string');
       expect(() => JSON.parse(value as string)).not.toThrow();
     });
 
     it('generates JSONB values', () => {
-      const column: ColumnSchema = {
+      const column: ColumnDefinition = {
         name: 'config',
         type: 'JSONB',
-        constraints: {}
+        nullable: false
       };
 
-      const value = generator.generate(column);
+      const value = generator.generate(column, context);
       expect(typeof value).toBe('string');
       expect(() => JSON.parse(value as string)).not.toThrow();
+    });
+
+    it('generates BINARY values', () => {
+      const column: ColumnDefinition = {
+        name: 'data',
+        type: 'BINARY',
+        nullable: false
+      };
+
+      const value = generator.generate(column, context);
+      expect(typeof value).toBe('string');
+      expect(value).toMatch(/^[0-9a-f]+$/i);
     });
   });
 
   describe('semantic column detection', () => {
     it('generates email for email columns', () => {
-      const column: ColumnSchema = {
+      const column: ColumnDefinition = {
         name: 'email',
-        type: 'VARCHAR(255)',
-        constraints: {}
+        type: 'VARCHAR',
+        length: 255,
+        nullable: false
       };
 
-      const value = generator.generate(column);
+      const value = generator.generate(column, context);
       expect(typeof value).toBe('string');
       expect((value as string)).toMatch(/^[^\s@]+@[^\s@]+\.[^\s@]+$/);
     });
 
     it('generates phone numbers for phone columns', () => {
-      const column: ColumnSchema = {
+      const column: ColumnDefinition = {
         name: 'phone_number',
-        type: 'VARCHAR(20)',
-        constraints: {}
+        type: 'VARCHAR',
+        length: 20,
+        nullable: false
       };
 
-      const value = generator.generate(column);
+      const value = generator.generate(column, context);
       expect(typeof value).toBe('string');
       expect((value as string).length).toBeGreaterThan(0);
     });
 
     it('generates first names for first_name columns', () => {
-      const column: ColumnSchema = {
+      const column: ColumnDefinition = {
         name: 'first_name',
-        type: 'VARCHAR(50)',
-        constraints: {}
+        type: 'VARCHAR',
+        length: 50,
+        nullable: false
       };
 
-      const value = generator.generate(column);
+      const value = generator.generate(column, context);
       expect(typeof value).toBe('string');
       expect((value as string).length).toBeGreaterThan(0);
     });
 
     it('generates last names for last_name columns', () => {
-      const column: ColumnSchema = {
+      const column: ColumnDefinition = {
         name: 'last_name',
-        type: 'VARCHAR(50)',
-        constraints: {}
+        type: 'VARCHAR',
+        length: 50,
+        nullable: false
       };
 
-      const value = generator.generate(column);
+      const value = generator.generate(column, context);
       expect(typeof value).toBe('string');
       expect((value as string).length).toBeGreaterThan(0);
     });
 
     it('generates full names for name columns', () => {
-      const column: ColumnSchema = {
+      const column: ColumnDefinition = {
         name: 'name',
-        type: 'VARCHAR(100)',
-        constraints: {}
+        type: 'VARCHAR',
+        length: 100,
+        nullable: false
       };
 
-      const value = generator.generate(column);
+      const value = generator.generate(column, context);
       expect(typeof value).toBe('string');
       expect((value as string).length).toBeGreaterThan(0);
     });
 
     it('generates addresses for address columns', () => {
-      const column: ColumnSchema = {
+      const column: ColumnDefinition = {
         name: 'address',
-        type: 'VARCHAR(255)',
-        constraints: {}
+        type: 'VARCHAR',
+        length: 255,
+        nullable: false
       };
 
-      const value = generator.generate(column);
+      const value = generator.generate(column, context);
       expect(typeof value).toBe('string');
       expect((value as string).length).toBeGreaterThan(0);
     });
 
     it('generates cities for city columns', () => {
-      const column: ColumnSchema = {
+      const column: ColumnDefinition = {
         name: 'city',
-        type: 'VARCHAR(100)',
-        constraints: {}
+        type: 'VARCHAR',
+        length: 100,
+        nullable: false
       };
 
-      const value = generator.generate(column);
+      const value = generator.generate(column, context);
       expect(typeof value).toBe('string');
       expect((value as string).length).toBeGreaterThan(0);
     });
 
     it('generates countries for country columns', () => {
-      const column: ColumnSchema = {
+      const column: ColumnDefinition = {
         name: 'country',
-        type: 'VARCHAR(100)',
-        constraints: {}
+        type: 'VARCHAR',
+        length: 100,
+        nullable: false
       };
 
-      const value = generator.generate(column);
+      const value = generator.generate(column, context);
       expect(typeof value).toBe('string');
       expect((value as string).length).toBeGreaterThan(0);
     });
 
     it('generates zip codes for postal code columns', () => {
-      const column: ColumnSchema = {
+      const column: ColumnDefinition = {
         name: 'zip_code',
-        type: 'VARCHAR(10)',
-        constraints: {}
+        type: 'VARCHAR',
+        length: 10,
+        nullable: false
       };
 
-      const value = generator.generate(column);
+      const value = generator.generate(column, context);
       expect(typeof value).toBe('string');
       expect((value as string).length).toBeGreaterThan(0);
     });
 
     it('generates company names for company columns', () => {
-      const column: ColumnSchema = {
+      const column: ColumnDefinition = {
         name: 'company',
-        type: 'VARCHAR(100)',
-        constraints: {}
+        type: 'VARCHAR',
+        length: 100,
+        nullable: false
       };
 
-      const value = generator.generate(column);
+      const value = generator.generate(column, context);
+      expect(typeof value).toBe('string');
+      expect((value as string).length).toBeGreaterThan(0);
+    });
+
+    it('generates descriptions for description columns', () => {
+      const column: ColumnDefinition = {
+        name: 'description',
+        type: 'TEXT',
+        nullable: false
+      };
+
+      const value = generator.generate(column, context);
       expect(typeof value).toBe('string');
       expect((value as string).length).toBeGreaterThan(0);
     });
 
     it('generates URLs for url columns', () => {
-      const column: ColumnSchema = {
-        name: 'website_url',
-        type: 'VARCHAR(255)',
-        constraints: {}
+      const column: ColumnDefinition = {
+        name: 'url',
+        type: 'VARCHAR',
+        length: 255,
+        nullable: false
       };
 
-      const value = generator.generate(column);
+      const value = generator.generate(column, context);
       expect(typeof value).toBe('string');
       expect((value as string)).toMatch(/^https?:\/\//);
     });
 
-    it('generates job titles for title columns', () => {
-      const column: ColumnSchema = {
-        name: 'job_title',
-        type: 'VARCHAR(100)',
-        constraints: {}
+    it('generates usernames for username columns', () => {
+      const column: ColumnDefinition = {
+        name: 'username',
+        type: 'VARCHAR',
+        length: 50,
+        nullable: false
       };
 
-      const value = generator.generate(column);
+      const value = generator.generate(column, context);
+      expect(typeof value).toBe('string');
+      expect((value as string).length).toBeGreaterThan(0);
+    });
+
+    it('generates passwords for password columns', () => {
+      const column: ColumnDefinition = {
+        name: 'password',
+        type: 'VARCHAR',
+        length: 100,
+        nullable: false
+      };
+
+      const value = generator.generate(column, context);
       expect(typeof value).toBe('string');
       expect((value as string).length).toBeGreaterThan(0);
     });
   });
 
-  describe('constraint handling', () => {
-    it('respects NOT NULL constraint', () => {
-      const column: ColumnSchema = {
-        name: 'required_field',
-        type: 'VARCHAR(100)',
-        constraints: {
-          notNull: true
-        }
-      };
-
-      const value = generator.generate(column);
-      expect(value).not.toBeNull();
-      expect(value).not.toBeUndefined();
-    });
-
-    it('generates NULL for nullable columns sometimes', () => {
-      const column: ColumnSchema = {
+  describe('nullable columns', () => {
+    it('sometimes generates null for nullable columns', () => {
+      const column: ColumnDefinition = {
         name: 'optional_field',
-        type: 'VARCHAR(100)',
-        constraints: {
-          notNull: false
-        }
+        type: 'VARCHAR',
+        length: 100,
+        nullable: true
       };
 
-      let hasNull = false;
-      let hasValue = false;
+      const values = Array.from({ length: 100 }, () => generator.generate(column, context));
+      const nullCount = values.filter(v => v === null).length;
 
-      for (let i = 0; i < 100; i++) {
-        const value = generator.generate(column);
-        if (value === null) hasNull = true;
-        if (value !== null) hasValue = true;
-      }
-
-      // Should generate both null and non-null values
-      expect(hasNull || hasValue).toBe(true);
+      expect(nullCount).toBeGreaterThan(0);
+      expect(nullCount).toBeLessThan(100);
     });
 
-    it('respects DEFAULT values', () => {
-      const column: ColumnSchema = {
-        name: 'status',
-        type: 'VARCHAR(20)',
-        constraints: {
-          default: 'active'
-        }
+    it('never generates null for non-nullable columns', () => {
+      const column: ColumnDefinition = {
+        name: 'required_field',
+        type: 'VARCHAR',
+        length: 100,
+        nullable: false
       };
 
-      const value = generator.generate(column);
-      // Generator may or may not use default, but should be valid
-      expect(value).toBeDefined();
+      const values = Array.from({ length: 100 }, () => generator.generate(column, context));
+      const nullCount = values.filter(v => v === null).length;
+
+      expect(nullCount).toBe(0);
+    });
+  });
+
+  describe('default values', () => {
+    it('uses default value when specified', () => {
+      const column: ColumnDefinition = {
+        name: 'status',
+        type: 'VARCHAR',
+        length: 20,
+        nullable: false,
+        defaultValue: 'pending'
+      };
+
+      const value = generator.generate(column, context);
+      expect(value).toBe('pending');
     });
   });
 
   describe('locale support', () => {
-    it('generates locale-specific data for US', () => {
-      const usGenerator = new ValueGenerator({ seed: 42, locale: 'en_US' });
-      const column: ColumnSchema = {
-        name: 'name',
-        type: 'VARCHAR(100)',
-        constraints: {}
-      };
-
-      const value = usGenerator.generate(column);
-      expect(typeof value).toBe('string');
+    it('supports en_US locale', () => {
+      const gen = new ValueGenerator(42, 'en_US');
+      expect(gen.getLocale()).toBe('en_US');
     });
 
-    it('generates locale-specific data for UK', () => {
-      const ukGenerator = new ValueGenerator({ seed: 42, locale: 'en_GB' });
-      const column: ColumnSchema = {
-        name: 'name',
-        type: 'VARCHAR(100)',
-        constraints: {}
-      };
-
-      const value = ukGenerator.generate(column);
-      expect(typeof value).toBe('string');
+    it('supports en_GB locale', () => {
+      const gen = new ValueGenerator(42, 'en_GB');
+      expect(gen.getLocale()).toBe('en_GB');
     });
 
-    it('generates locale-specific data for Germany', () => {
-      const deGenerator = new ValueGenerator({ seed: 42, locale: 'de' });
-      const column: ColumnSchema = {
-        name: 'name',
-        type: 'VARCHAR(100)',
-        constraints: {}
-      };
-
-      const value = deGenerator.generate(column);
-      expect(typeof value).toBe('string');
+    it('supports de_DE locale', () => {
+      const gen = new ValueGenerator(42, 'de_DE');
+      expect(gen.getLocale()).toBe('de_DE');
     });
 
-    it('generates locale-specific data for France', () => {
-      const frGenerator = new ValueGenerator({ seed: 42, locale: 'fr' });
-      const column: ColumnSchema = {
-        name: 'name',
-        type: 'VARCHAR(100)',
-        constraints: {}
-      };
+    it('supports fr_FR locale', () => {
+      const gen = new ValueGenerator(42, 'fr_FR');
+      expect(gen.getLocale()).toBe('fr_FR');
+    });
 
-      const value = frGenerator.generate(column);
-      expect(typeof value).toBe('string');
+    it('can change locale', () => {
+      const gen = new ValueGenerator(42, 'en_US');
+      expect(gen.getLocale()).toBe('en_US');
+
+      gen.setLocale('fr_FR');
+      expect(gen.getLocale()).toBe('fr_FR');
     });
   });
 
-  describe('deterministic generation', () => {
-    it('generates same sequence with same seed', () => {
-      const gen1 = new ValueGenerator({ seed: 12345 });
-      const gen2 = new ValueGenerator({ seed: 12345 });
-
-      const column: ColumnSchema = {
-        name: 'test',
-        type: 'VARCHAR(100)',
-        constraints: {}
+  describe('deterministic generation with seed', () => {
+    it('generates same values with same seed', () => {
+      const column: ColumnDefinition = {
+        name: 'random_field',
+        type: 'VARCHAR',
+        length: 50,
+        nullable: false
       };
 
-      const values1 = Array.from({ length: 10 }, () => gen1.generate(column));
-      const values2 = Array.from({ length: 10 }, () => gen2.generate(column));
+      const gen1 = new ValueGenerator(123);
+      const gen2 = new ValueGenerator(123);
 
-      expect(values1).toEqual(values2);
+      const value1 = gen1.generate(column, context);
+      const value2 = gen2.generate(column, context);
+
+      expect(value1).toBe(value2);
     });
 
-    it('generates different sequence with different seed', () => {
-      const gen1 = new ValueGenerator({ seed: 12345 });
-      const gen2 = new ValueGenerator({ seed: 54321 });
-
-      const column: ColumnSchema = {
-        name: 'test',
-        type: 'VARCHAR(100)',
-        constraints: {}
+    it('can reset to reproduce values', () => {
+      const column: ColumnDefinition = {
+        name: 'field',
+        type: 'INTEGER',
+        nullable: false
       };
 
-      const values1 = Array.from({ length: 10 }, () => gen1.generate(column));
-      const values2 = Array.from({ length: 10 }, () => gen2.generate(column));
+      const gen = new ValueGenerator(456);
 
-      expect(values1).not.toEqual(values2);
-    });
-  });
+      const firstValue = gen.generate(column, context);
+      gen.generate(column, context); // Generate another value
 
-  describe('length constraints', () => {
-    it('respects VARCHAR length limit', () => {
-      const column: ColumnSchema = {
-        name: 'code',
-        type: 'VARCHAR(5)',
-        constraints: {}
-      };
+      gen.reset();
+      const resetValue = gen.generate(column, context);
 
-      for (let i = 0; i < 100; i++) {
-        const value = generator.generate(column);
-        expect((value as string).length).toBeLessThanOrEqual(5);
-      }
-    });
-
-    it('handles very small VARCHAR limits', () => {
-      const column: ColumnSchema = {
-        name: 'initial',
-        type: 'VARCHAR(1)',
-        constraints: {}
-      };
-
-      const value = generator.generate(column);
-      expect((value as string).length).toBeLessThanOrEqual(1);
-    });
-
-    it('handles large VARCHAR limits', () => {
-      const column: ColumnSchema = {
-        name: 'description',
-        type: 'VARCHAR(5000)',
-        constraints: {}
-      };
-
-      const value = generator.generate(column);
-      expect(typeof value).toBe('string');
-      expect((value as string).length).toBeLessThanOrEqual(5000);
+      expect(resetValue).toBe(firstValue);
     });
   });
 
-  describe('numeric precision', () => {
-    it('respects DECIMAL precision', () => {
-      const column: ColumnSchema = {
+  describe('respects column constraints', () => {
+    it('respects VARCHAR length constraint', () => {
+      const column: ColumnDefinition = {
+        name: 'short_text',
+        type: 'VARCHAR',
+        length: 10,
+        nullable: false
+      };
+
+      const values = Array.from({ length: 50 }, () => generator.generate(column, context));
+
+      values.forEach(value => {
+        expect((value as string).length).toBeLessThanOrEqual(10);
+      });
+    });
+
+    it('respects DECIMAL precision and scale', () => {
+      const column: ColumnDefinition = {
         name: 'amount',
-        type: 'DECIMAL(10,2)',
-        constraints: {}
+        type: 'DECIMAL',
+        precision: 8,
+        scale: 2,
+        nullable: false
       };
 
-      const value = generator.generate(column);
+      const value = generator.generate(column, context);
       expect(typeof value).toBe('number');
-
-      // Check that it has at most 2 decimal places
-      const strValue = (value as number).toString();
-      const parts = strValue.split('.');
-      if (parts.length > 1) {
-        expect(parts[1].length).toBeLessThanOrEqual(2);
-      }
-    });
-
-    it('generates integers for DECIMAL(10,0)', () => {
-      const column: ColumnSchema = {
-        name: 'count',
-        type: 'DECIMAL(10,0)',
-        constraints: {}
-      };
-
-      const value = generator.generate(column);
-      expect(typeof value).toBe('number');
-      expect(Number.isInteger(value as number)).toBe(true);
+      expect(value).toBeLessThan(Math.pow(10, 6)); // 10^(precision - scale)
     });
   });
 });

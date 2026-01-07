@@ -1,5 +1,6 @@
 testdatagen/node_modules/
 testdatagen/dist/
+testdatagen/coverage/
 testdatagen/package-lock.json
 *.csv
 *.parquet

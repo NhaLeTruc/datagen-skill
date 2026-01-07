@@ -17,7 +17,7 @@ describe('Phase 3 Features Integration', () => {
       ],
       constraints: [
         { type: 'PRIMARY_KEY', columns: ['id'] },
-        { type: 'FOREIGN_KEY', columns: ['manager_id'], referencedTable: 'employees', referencedColumn: 'id', table: 'employees' }
+        { type: 'FOREIGN_KEY', columns: ['manager_id'], referencedTable: 'employees', referencedColumns: ['id'] }
       ]
     };
 
@@ -27,7 +27,7 @@ describe('Phase 3 Features Integration', () => {
 
       const selfRefs = handler.identifySelfReferences(employeeTable);
       expect(selfRefs).toHaveLength(1);
-      expect(selfRefs[0].referencedTable).toBe('employees');
+      expect((selfRefs[0] as any).referencedTable).toBe('employees');
     });
 
     it('should generate tiered records', async () => {
@@ -94,7 +94,7 @@ describe('Phase 3 Features Integration', () => {
           ],
           constraints: [
             { type: 'PRIMARY_KEY', columns: ['id'] },
-            { type: 'FOREIGN_KEY', columns: ['featured_book_id'], referencedTable: 'books', referencedColumn: 'id', table: 'authors' }
+            { type: 'FOREIGN_KEY', columns: ['featured_book_id'], referencedTable: 'books', referencedColumns: ['id'] }
           ]
         },
         {
@@ -106,7 +106,7 @@ describe('Phase 3 Features Integration', () => {
           ],
           constraints: [
             { type: 'PRIMARY_KEY', columns: ['id'] },
-            { type: 'FOREIGN_KEY', columns: ['author_id'], referencedTable: 'authors', referencedColumn: 'id', table: 'books' }
+            { type: 'FOREIGN_KEY', columns: ['author_id'], referencedTable: 'authors', referencedColumns: ['id'] }
           ]
         }
       ]
@@ -264,7 +264,7 @@ describe('Phase 3 Features Integration', () => {
         ],
         constraints: [
           { type: 'PRIMARY_KEY', columns: ['id'] },
-          { type: 'FOREIGN_KEY', columns: ['manager_id'], referencedTable: 'employees', referencedColumn: 'id', table: 'employees' }
+          { type: 'FOREIGN_KEY', columns: ['manager_id'], referencedTable: 'employees', referencedColumns: ['id'] }
         ]
       };
 
